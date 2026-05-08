@@ -116,6 +116,26 @@
   .end-banner { text-align:center; padding:1rem; border-radius:var(--r); margin-top:0.5rem; }
   .end-banner.won  { background:rgba(45,106,10,0.2); border:1px solid #5A9E22; }
   .end-banner.lost { background:rgba(122,18,18,0.2); border:1px solid #C0392B; }
+
+  /* ── Reaction system ── */
+  .react-btn { font-size:13px; padding:4px 10px; border-radius:20px; cursor:pointer; border:0.5px solid var(--border2); background:var(--bg3); user-select:none; }
+  .react-picker { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:8px; background:var(--bg2); border-radius:var(--r); border:0.5px solid var(--border); margin-top:6px; }
+  .react-pick-btn { font-size:22px; cursor:pointer; padding:4px 6px; border-radius:8px; border:none; background:transparent; transition:transform 0.1s; }
+  .react-pick-btn:hover { transform:scale(1.3); background:var(--bg3); }
+  .react-cooldown { font-size:11px; color:var(--text3); padding:4px 10px; }
+
+  /* Flying emoji animation — appears on screen when opponent reacts */
+  @keyframes flyIn {
+    0%   { transform:scale(0) rotate(-20deg); opacity:0; }
+    30%  { transform:scale(1.4) rotate(10deg); opacity:1; }
+    70%  { transform:scale(1.2) rotate(-5deg); opacity:1; }
+    100% { transform:scale(1) rotate(0deg); opacity:0; }
+  }
+  .reaction-overlay {
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-size:80px; z-index:9999; pointer-events:none;
+    animation:flyIn 2.5s ease-out forwards;
+  }
 </style>
 </head>
 <body>
@@ -274,6 +294,12 @@ let cpuSeenCards=new Set();
 // Online
 let myRole=null, roomCode=null, pollTimer=null, lastVer=-1, lastSK=null;
 let cachedState=null; // last rendered state — used to avoid Firebase propagation delay on picks
+
+// Reactions
+const REACTIONS = ["🤡","🍌"];
+let reactCooldown=false;   // prevents spamming
+let lastReaction=null;     // last reaction we saw (to avoid re-showing our own)
+let reactPickerOpen=false; // whether picker is visible
 
 
 // ════════════════════════════════════════════════════════
@@ -574,6 +600,80 @@ function hsReveal(){sfxClick();phase="pick";renderHS(true);}
 // ════════════════════════════════════════════════════════
 // ONLINE MODE — Firebase REST
 // ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// REACTION SYSTEM
+// ════════════════════════════════════════════════════════
+
+// Show a big flying emoji on THIS device's screen
+function showReactionOverlay(emoji){
+  const div=document.createElement("div");
+  div.className="reaction-overlay";
+  div.textContent=emoji;
+  document.body.appendChild(div);
+  setTimeout(()=>div.remove(),2600);
+}
+
+// Toggle the emoji picker open/closed
+function toggleReactPicker(){
+  reactPickerOpen=!reactPickerOpen;
+  renderReactPicker();
+}
+
+// Render just the reaction section without re-rendering the whole game
+function renderReactPicker(){
+  const wrap=document.getElementById("react-wrap");
+  if(!wrap)return;
+  if(!reactPickerOpen){
+    wrap.innerHTML=reactBtnHTML();
+    return;
+  }
+  wrap.innerHTML=reactBtnHTML()+`
+    <div class="react-picker">
+      ${REACTIONS.map(e=>`<button class="react-pick-btn" onclick="sendReaction('${e}')">${e}</button>`).join("")}
+    </div>`;
+}
+
+// HTML for the reaction trigger button
+function reactBtnHTML(){
+  if(reactCooldown) return `<span class="react-cooldown">😤 Reacting…</span>`;
+  return `<button class="react-btn" onclick="toggleReactPicker()">😄 React</button>`;
+}
+
+// Send a reaction to Firebase and show it on our own screen too
+async function sendReaction(emoji){
+  if(reactCooldown)return;
+  sfxClick();
+  reactCooldown=true; reactPickerOpen=false;
+  // Show on sender's screen immediately
+  showReactionOverlay(emoji);
+  renderReactPicker();
+  try{
+    // Write reaction to Firebase — opponent's poll will pick it up
+    const st=JSON.parse(JSON.stringify(cachedState||{}));
+    st.reaction={emoji, from:myRole, ts:Date.now()};
+    st.version=(st.version||0)+1;
+    await fbSet(`rooms/${roomCode}`,st);
+    lastVer=st.version;
+    // Update cachedState too
+    if(cachedState) cachedState.reaction=st.reaction;
+  }catch(e){console.error("sendReaction:",e);}
+  // Cooldown for 3 seconds
+  setTimeout(()=>{reactCooldown=false;renderReactPicker();},3000);
+}
+
+// Called from poll when new state arrives — check if opponent reacted
+function checkReaction(state){
+  if(!state.reaction)return;
+  const r=state.reaction;
+  // Only show if it's FROM the opponent (not our own reaction echoed back)
+  if(r.from===myRole)return;
+  // Only show if it's new (not already shown)
+  const key=`${r.from}_${r.ts}`;
+  if(key===lastReaction)return;
+  lastReaction=key;
+  showReactionOverlay(r.emoji);
+}
+
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;}
 
 function startPoll(){
@@ -591,7 +691,16 @@ function startPoll(){
         if(st.proMode!==undefined)    proMode=st.proMode;
         if(st.includeUTs!==undefined) includeUTs=st.includeUTs;
         if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
-        renderOnline(st);
+        // Check if opponent sent a reaction
+        checkReaction(st);
+        // Only re-render if game state changed (not just a reaction)
+        const isReactionOnly = st.reaction && cachedState &&
+          st.p1Deck?.length===cachedState.p1Deck?.length &&
+          st.phase===cachedState.phase &&
+          st.turn===cachedState.turn &&
+          st.result===cachedState.result;
+        if(!isReactionOnly) renderOnline(st);
+        else cachedState=st; // update cache silently
       }
     }catch(e){}
   },1500);
@@ -876,7 +985,9 @@ function renderOnline(state){
       ${inR?buildCard(oc,{hdrCls:"them",activeStat:sel,outcome:oppOut,clickable:false,animate:false}):faceDown("them","Opponent")}
     </div>
     <div class="controls">${ctrlHTML}${!inR?flipBtn:""}</div>
-    ${banner}`;
+    ${banner}
+    <!-- Reaction button — always visible during online game -->
+    <div id="react-wrap" style="text-align:center;margin-top:8px">${reactBtnHTML()}</div>`;
 }
 
 // Boot

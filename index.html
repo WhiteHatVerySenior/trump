@@ -30,7 +30,6 @@
     --radius-sm:8px;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
-  
   body { background: var(--bg); color: var(--text); min-height: 100vh; }
 
   /* ── Layout ── */
@@ -728,8 +727,8 @@ async function onlineNextCard(){
   try{
     const st=await fbGet(`rooms/${roomCode}`);
     if(!st||st.phase!=="result")return;
-    const p1w=(st.result==="win"&&st.pickedBy==="p1")||(st.result==="lose"&&st.pickedBy==="p2");
-    const p2w=(st.result==="win"&&st.pickedBy==="p2")||(st.result==="lose"&&st.pickedBy==="p1");
+    const p1w=st.result==="win";
+    const p2w=st.result==="lose";
     if(p1w){st.p1Deck.push(st.p1Deck.shift());st.p1Deck.push(st.p2Deck.shift());st.turn="p1";}
     else if(p2w){st.p2Deck.push(st.p2Deck.shift());st.p2Deck.push(st.p1Deck.shift());st.turn="p2";}
     else{st.p1Deck.push(st.p1Deck.shift());st.p2Deck.push(st.p2Deck.shift());}

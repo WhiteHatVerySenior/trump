@@ -204,15 +204,14 @@ let cpuSeenCards=new Set();
 let myRole=null,roomCode=null,pollTimer=null,lastVer=-1,lastSK=null,cachedState=null;
 
 // ══════════════════════════════════════════════════
-// REACTIONS — simple, stored in game state, shown on both screens
+// REACTIONS — embedded in game state, both players see it
 // ══════════════════════════════════════════════════
 const REACTIONS=["🤡","🍌"];
 let rxCooldown=false;
 let rxPickerOpen=false;
 let rxLastSeen=null;
-
 function rxStopPoll(){rxLastSeen=null;}
-function rxStartPoll(){}  // not needed — reactions come via game state poll
+function rxStartPoll(){}
 
 function rxShowOverlay(emoji){
   const d=document.createElement("div");
@@ -221,21 +220,19 @@ function rxShowOverlay(emoji){
   setTimeout(()=>d.remove(),2600);
 }
 
-// Write reaction into game state — both players' polls will pick it up
+// Write reaction into game state — game state poll on both devices picks it up
 async function rxSend(emoji){
-  if(rxCooldown)return;
+  if(rxCooldown||!cachedState)return;
   sfxClick();
   rxCooldown=true;rxPickerOpen=false;rxRender();
-  rxShowOverlay(emoji); // show on sender's screen immediately
+  rxShowOverlay(emoji);  // sender sees it immediately
   try{
-    if(cachedState){
-      const st=JSON.parse(JSON.stringify(cachedState));
-      st.reaction={emoji,ts:Date.now()};
-      st.version=(st.version||0)+1;
-      await fbSet(`rooms/${roomCode}`,st);
-      lastVer=st.version;
-      cachedState=st;
-    }
+    const st=JSON.parse(JSON.stringify(cachedState));
+    st.reaction={emoji,ts:Date.now()};
+    st.version=(st.version||0)+1;
+    await fbSet(`rooms/${roomCode}`,st);
+    lastVer=st.version;
+    cachedState=st;
   }catch(e){console.error("rxSend:",e);}
   setTimeout(()=>{rxCooldown=false;rxRender();},3000);
 }
@@ -250,7 +247,7 @@ function rxRender(){
     <div class="react-picker">${REACTIONS.map(e=>`<button class="react-opt" onclick="rxSend('${e}')">${e}</button>`).join("")}</div>`;
 }
 
-// Called from poll when reaction arrives
+// Called from game state poll — opponent sees the emoji
 function rxCheck(state){
   if(!state.reaction)return;
   const key=state.reaction.emoji+"_"+state.reaction.ts;

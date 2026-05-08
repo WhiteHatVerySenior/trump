@@ -297,9 +297,7 @@ let cachedState=null; // last rendered state — used to avoid Firebase propagat
 
 // Reactions
 const REACTIONS = ["🤡","🍌"];
-let mySentReactionTs = null; // timestamp of reaction WE sent — used to ignore our own
 let reactCooldown=false;   // prevents spamming
-let lastReaction=null;     // last reaction we saw (to avoid re-showing our own)
 let reactPickerOpen=false; // whether picker is visible
 
 
@@ -603,82 +601,92 @@ function hsReveal(){sfxClick();phase="pick";renderHS(true);}
 // ════════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════════
 // REACTION SYSTEM
+//
+// Each player writes to their OWN Firebase path.
+// Each player ONLY reads the OPPONENT's path.
+// Sender can never see their own emoji — by design.
+//
+//   reactions/{roomCode}/p1  ← P1 writes, P2 reads
+//   reactions/{roomCode}/p2  ← P2 writes, P1 reads
 // ════════════════════════════════════════════════════════
 
-// Show a big flying emoji on THIS device's screen
+let reactPollTimer  = null;   // polls opponent's reaction path
+let lastSeenReact   = null;   // prevents showing same reaction twice
+
+// Show a flying emoji on THIS device's screen
 function showReactionOverlay(emoji){
-  const div=document.createElement("div");
-  div.className="reaction-overlay";
-  div.textContent=emoji;
+  const div = document.createElement("div");
+  div.className = "reaction-overlay";
+  div.textContent = emoji;
   document.body.appendChild(div);
-  setTimeout(()=>div.remove(),2600);
+  setTimeout(()=>div.remove(), 2600);
 }
 
-// Toggle the emoji picker open/closed
+// Start polling opponent's reaction path — called when game begins
+function startReactionPoll(){
+  stopReactionPoll();
+  const opponentRole = myRole==="p1" ? "p2" : "p1";
+  const path = `reactions/${roomCode}/${opponentRole}`;
+  reactPollTimer = setInterval(async()=>{
+    try{
+      const r = await fbGet(path);
+      if(!r || !r.ts) return;
+      const key = r.emoji + "_" + r.ts;
+      if(key === lastSeenReact) return;  // already shown this one
+      lastSeenReact = key;
+      showReactionOverlay(r.emoji);
+    }catch(e){}
+  }, 1000);
+}
+
+// Stop and clean up reaction poll
+function stopReactionPoll(){
+  if(reactPollTimer){ clearInterval(reactPollTimer); reactPollTimer=null; }
+  lastSeenReact = null;
+}
+
+// Toggle emoji picker open/closed
 function toggleReactPicker(){
-  reactPickerOpen=!reactPickerOpen;
+  reactPickerOpen = !reactPickerOpen;
   renderReactPicker();
 }
 
-// Render just the reaction section without re-rendering the whole game
+// Re-render just the reaction section (no full game re-render)
 function renderReactPicker(){
-  const wrap=document.getElementById("react-wrap");
-  if(!wrap)return;
+  const wrap = document.getElementById("react-wrap");
+  if(!wrap) return;
   if(!reactPickerOpen){
-    wrap.innerHTML=reactBtnHTML();
+    wrap.innerHTML = reactBtnHTML();
     return;
   }
-  wrap.innerHTML=reactBtnHTML()+`
+  wrap.innerHTML = reactBtnHTML() + `
     <div class="react-picker">
       ${REACTIONS.map(e=>`<button class="react-pick-btn" onclick="sendReaction('${e}')">${e}</button>`).join("")}
     </div>`;
 }
 
-// HTML for the reaction trigger button
 function reactBtnHTML(){
   if(reactCooldown) return `<span class="react-cooldown">😤 Reacting…</span>`;
   return `<button class="react-btn" onclick="toggleReactPicker()">😄 React</button>`;
 }
 
-// Send a reaction to Firebase and show it on our own screen too
+// Send a reaction — writes ONLY to MY path in Firebase
+// I never read my own path, so I can never see my own emoji
 async function sendReaction(emoji){
-  if(reactCooldown)return;
+  if(reactCooldown) return;
   sfxClick();
-  reactCooldown=true; reactPickerOpen=false;
-  // Do NOT show on sender's screen — only opponent sees it
-  // (sender already knows what they sent!)
+  reactCooldown = true;
+  reactPickerOpen = false;
   renderReactPicker();
   try{
-    // Write reaction to Firebase — opponent's poll will pick it up
-    const st=JSON.parse(JSON.stringify(cachedState||{}));
-    mySentReactionTs = Date.now();
-    st.reaction={emoji, from:myRole, ts:mySentReactionTs};
-    st.version=(st.version||0)+1;
-    await fbSet(`rooms/${roomCode}`,st);
-    // Update lastVer so OUR OWN poll skips this update entirely
-    // The opponent's poll will catch it and show the emoji on THEIR screen
-    lastVer=st.version;
-    if(cachedState){cachedState.reaction=st.reaction;cachedState.version=st.version;}
-  }catch(e){console.error("sendReaction:",e);}
-  // Cooldown for 3 seconds
-  setTimeout(()=>{reactCooldown=false;renderReactPicker();},3000);
+    await fbSet(`reactions/${roomCode}/${myRole}`, {emoji, ts:Date.now()});
+    // No showReactionOverlay here — sender never sees their own emoji
+  }catch(e){ console.error("sendReaction:", e); }
+  setTimeout(()=>{ reactCooldown=false; renderReactPicker(); }, 3000);
 }
 
-// Called from poll when new state arrives — check if opponent reacted
-// RULE: only show the emoji if the OTHER player sent it, never yourself
-function checkReaction(state){
-  if(!state.reaction) return;
-  const r = state.reaction;
-  // Ignore by timestamp — catches edge cases where myRole check might fail
-  if(r.ts === mySentReactionTs) return;          // WE sent this — ignore by timestamp
-  if(r.from === myRole) return;                  // double-check by role too
-  const key = `${r.from}_${r.ts}`;
-  if(key === lastReaction) return;               // already shown this one
-  lastReaction = key;
-  showReactionOverlay(r.emoji);
-}
 
-function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;}
+function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;stopReactionPoll();}
 
 function startPoll(){
   stopPoll();
@@ -695,16 +703,7 @@ function startPoll(){
         if(st.proMode!==undefined)    proMode=st.proMode;
         if(st.includeUTs!==undefined) includeUTs=st.includeUTs;
         if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
-        // Check if opponent sent a reaction
-        checkReaction(st);
-        // Only re-render if game state changed (not just a reaction)
-        const isReactionOnly = st.reaction && cachedState &&
-          st.p1Deck?.length===cachedState.p1Deck?.length &&
-          st.phase===cachedState.phase &&
-          st.turn===cachedState.turn &&
-          st.result===cachedState.result;
-        if(!isReactionOnly) renderOnline(st);
-        else cachedState=st; // update cache silently
+        renderOnline(st);
       }
     }catch(e){}
   },1500);
@@ -808,7 +807,7 @@ async function joinOnlineRoom(){
     if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
     st.phase="pick"; st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
-    lastVer=st.version; lastReaction=null; reactCooldown=false; reactPickerOpen=false; startPoll(); renderOnline(st);
+    lastVer=st.version; lastSeenReact=null; reactCooldown=false; reactPickerOpen=false; startPoll(); startReactionPoll(); renderOnline(st);
   }catch(e){el("je").textContent="Error: "+e.message;}
 }
 
@@ -897,6 +896,8 @@ function renderOnline(state){
   const app=el("app");
   if(!app||!myRole)return;
   if(state.phase==="waiting"&&myRole==="p1")return;
+  // Start reaction poll the first time we see the game is live (both players in)
+  if(state.phase!=="waiting"&&!reactPollTimer) startReactionPoll();
   // Normalise arrays
   state.p1Deck=toArr(state.p1Deck);
   state.p2Deck=toArr(state.p2Deck);

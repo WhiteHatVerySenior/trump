@@ -204,19 +204,15 @@ let cpuSeenCards=new Set();
 let myRole=null,roomCode=null,pollTimer=null,lastVer=-1,lastSK=null,cachedState=null;
 
 // ══════════════════════════════════════════════════
-// REACTIONS — separate Firebase paths, clean channel
-//
-// P1 writes: react/{room}/p1   P2 reads: react/{room}/p1
-// P2 writes: react/{room}/p2   P1 reads: react/{room}/p2
-//
-// Each device polls ONLY the opponent's path.
-// It is architecturally impossible to see your own emoji.
+// REACTIONS — simple, stored in game state, shown on both screens
 // ══════════════════════════════════════════════════
 const REACTIONS=["🤡","🍌"];
-let rxPollTimer=null;      // polls opponent's reaction path every second
-let rxLastSeen=null;       // key of last reaction shown — prevents repeats
-let rxCooldown=false;      // 3s cooldown between sends
-let rxPickerOpen=false;    // picker visibility
+let rxCooldown=false;
+let rxPickerOpen=false;
+let rxLastSeen=null;
+
+function rxStopPoll(){rxLastSeen=null;}
+function rxStartPoll(){}  // not needed — reactions come via game state poll
 
 function rxShowOverlay(emoji){
   const d=document.createElement("div");
@@ -225,36 +221,21 @@ function rxShowOverlay(emoji){
   setTimeout(()=>d.remove(),2600);
 }
 
-// Start polling opponent's path — called once when game goes live
-function rxStartPoll(){
-  rxStopPoll();
-  if(!roomCode||!myRole)return;
-  const oppRole=myRole==="p1"?"p2":"p1";
-  const path=`react/${roomCode}/${oppRole}`;
-  rxPollTimer=setInterval(async()=>{
-    try{
-      const r=await fbGet(path);
-      if(!r||!r.ts)return;
-      const key=r.emoji+"_"+r.ts;
-      if(key===rxLastSeen)return;
-      rxLastSeen=key;
-      rxShowOverlay(r.emoji);
-    }catch(e){}
-  },1000);
-}
-
-function rxStopPoll(){
-  if(rxPollTimer){clearInterval(rxPollTimer);rxPollTimer=null;}
-  rxLastSeen=null;
-}
-
-// Send — writes to MY path only. I never read my own path.
+// Write reaction into game state — both players' polls will pick it up
 async function rxSend(emoji){
   if(rxCooldown)return;
   sfxClick();
   rxCooldown=true;rxPickerOpen=false;rxRender();
+  rxShowOverlay(emoji); // show on sender's screen immediately
   try{
-    await fbSet(`react/${roomCode}/${myRole}`,{emoji,ts:Date.now()});
+    if(cachedState){
+      const st=JSON.parse(JSON.stringify(cachedState));
+      st.reaction={emoji,ts:Date.now()};
+      st.version=(st.version||0)+1;
+      await fbSet(`rooms/${roomCode}`,st);
+      lastVer=st.version;
+      cachedState=st;
+    }
   }catch(e){console.error("rxSend:",e);}
   setTimeout(()=>{rxCooldown=false;rxRender();},3000);
 }
@@ -263,10 +244,19 @@ function rxToggle(){rxPickerOpen=!rxPickerOpen;rxRender();}
 
 function rxRender(){
   const w=el("rx-wrap");if(!w)return;
-  if(rxCooldown){w.innerHTML=`<div class="react-bar"><span class="react-cd">😤 sent!</span></div>`;return;}
+  if(rxCooldown){w.innerHTML=`<div class="react-bar"><span class="react-cd">😤</span></div>`;return;}
   if(!rxPickerOpen){w.innerHTML=`<div class="react-bar"><button class="react-btn" onclick="rxToggle()">😄 React</button></div>`;return;}
-  w.innerHTML=`<div class="react-bar"><button class="react-btn" onclick="rxToggle()">✕ Close</button></div>
+  w.innerHTML=`<div class="react-bar"><button class="react-btn" onclick="rxToggle()">✕</button></div>
     <div class="react-picker">${REACTIONS.map(e=>`<button class="react-opt" onclick="rxSend('${e}')">${e}</button>`).join("")}</div>`;
+}
+
+// Called from poll when reaction arrives
+function rxCheck(state){
+  if(!state.reaction)return;
+  const key=state.reaction.emoji+"_"+state.reaction.ts;
+  if(key===rxLastSeen)return;
+  rxLastSeen=key;
+  rxShowOverlay(state.reaction.emoji);
 }
 
 // ══════════════════════════════════════════════════
@@ -433,6 +423,7 @@ function startPoll(){
         if(st.proMode!==undefined)proMode=st.proMode;
         if(st.includeUTs!==undefined)includeUTs=st.includeUTs;
         if(st.flipsAllowed!==undefined)onlineFlipsAllowed=st.flipsAllowed;
+        rxCheck(st);
         renderOnline(st);
       }
     }catch(e){}

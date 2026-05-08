@@ -653,25 +653,25 @@ async function sendReaction(emoji){
     st.reaction={emoji, from:myRole, ts:Date.now()};
     st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
+    // Update lastVer so OUR OWN poll skips this update entirely
+    // The opponent's poll will catch it and show the emoji on THEIR screen
     lastVer=st.version;
-    // Update cachedState too
-    if(cachedState) cachedState.reaction=st.reaction;
+    if(cachedState){cachedState.reaction=st.reaction;cachedState.version=st.version;}
   }catch(e){console.error("sendReaction:",e);}
   // Cooldown for 3 seconds
   setTimeout(()=>{reactCooldown=false;renderReactPicker();},3000);
 }
 
 // Called from poll when new state arrives — check if opponent reacted
+// RULE: only show the emoji if the OTHER player sent it, never yourself
 function checkReaction(state){
-  if(!state.reaction)return;
-  const r=state.reaction;
-  // Only show if it's FROM the opponent (not our own reaction echoed back)
-  if(r.from===myRole)return;
-  // Only show if it's new (not already shown)
-  const key=`${r.from}_${r.ts}`;
-  if(key===lastReaction)return;
-  lastReaction=key;
-  showReactionOverlay(r.emoji);
+  if(!state.reaction) return;                    // no reaction in state
+  const r = state.reaction;
+  if(r.from === myRole) return;                  // I sent this — ignore
+  const key = `${r.from}_${r.ts}`;
+  if(key === lastReaction) return;               // already shown this one
+  lastReaction = key;
+  showReactionOverlay(r.emoji);                  // show on MY screen (I am the opponent)
 }
 
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;}

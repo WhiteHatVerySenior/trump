@@ -563,7 +563,7 @@ function renderOnline(state){
   state.p1Deck=toArr(state.p1Deck);state.p2Deck=toArr(state.p2Deck);
   cachedState=state;
   // Start reaction poll the first time game is live
-  if(!rxPollTimer)rxStartPoll();
+
 
   // Opponent left
   if(state.playerLeft&&state.playerLeft!==myRole){sfxLose();stopPoll();app.innerHTML=`<div class="gameover"><div class="gameover-emoji">🚪</div><div class="gameover-title">Opponent left</div><button class="primary" onclick="showOnlineLobby()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`;return;}

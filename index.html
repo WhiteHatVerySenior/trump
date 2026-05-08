@@ -786,7 +786,7 @@ function renderOnline(state){
     <div class="turn-wrap"><span class="${bc}">${bt}</span></div>
     <div class="${mc2}">${mt}</div>
     <div class="arena">${myCardH()}${oppCardH()}</div>
-    <div class="controls">${inR?`<button onclick="onlineNextCard()">Next card ↗</button>`:""}</div>`;}
+    <div class="controls">${inR?(myOut==="win"||myOut==="draw"?`<button onclick="onlineNextCard()">Next card ↗</button>`:`<div class="msg wait">Waiting for next round…</div>`):""}</div>`;}
 
 
 // ════════════════════════════════════════════════════════════

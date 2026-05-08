@@ -298,6 +298,7 @@ let p1FlippedThisRound=false, p2FlippedThisRound=false;
 let cpuSeenCards = new Set();
 // Online
 let myRole=null, roomCode=null, pollTimer=null, lastVer=-1, lastSK=null;
+let lastState=null; // cached last known Firebase state — avoids re-fetching on every click
 
 
 // ════════════════════════════════════════════════════════════
@@ -686,7 +687,7 @@ function revealForPlayer(){sfxClick();phase="pick";renderHotseat(true);}
 // ════════════════════════════════════════════════════════════
 // ONLINE MODE — Firebase REST
 // ════════════════════════════════════════════════════════════
-function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}lastState=null;}
 function startPoll(){
   stopPoll();
   pollTimer=setInterval(async()=>{
@@ -849,21 +850,23 @@ function normState(st){
 
 async function onlinePickStat(key){
   sfxClick();
+  // Use cached lastState — avoids extra round trip and race conditions
+  if(!lastState||lastState.phase!=="pick"||lastState.turn!==myRole) return;
   try{
-    const st=normState(await fbGet(`rooms/${roomCode}`));
-    if(!st||st.phase!=="pick"||st.turn!==myRole)return;
+    // Deep copy so we don't mutate the cached state
+    const st=JSON.parse(JSON.stringify(lastState));
     const myD=myRole==="p1"?st.p1Deck:st.p2Deck;
     const opD=myRole==="p1"?st.p2Deck:st.p1Deck;
     const mc=ALL_CARDS.find(s=>s.name===myD[0]);
     const oc=ALL_CARDS.find(s=>s.name===opD[0]);
-    if(!mc||!oc){console.error("Card not found",myD[0],opD[0]);return;}
+    if(!mc||!oc){console.error("Card not found:",myD[0],opD[0]);return;}
     const p1f=st.p1Flipped||false, p2f=st.p2Flipped||false;
     const flipActive=isFlipActive(p1f,p2f);
     const mv=mc[key], ov=oc[key];
     let result;
     if(myRole==="p1") result=flipActive?(mv<ov?"win":mv>ov?"lose":"draw"):(mv>ov?"win":mv<ov?"lose":"draw");
     else              result=flipActive?(ov<mv?"win":ov>mv?"lose":"draw"):(ov>mv?"win":ov<mv?"lose":"draw");
-    // Check if this is the last card
+    // Check if this is the last card of the game
     const p1WinsRound=result==="win";
     const isGameOver=(p1WinsRound&&st.p2Deck.length===1)||(!p1WinsRound&&result!=="draw"&&st.p1Deck.length===1);
     st.selectedStat=key; st.result=result; st.pickedBy=myRole;
@@ -876,12 +879,17 @@ async function onlinePickStat(key){
 
 async function onlineNextCard(){
   sfxClick();
+  // Use cached state — avoids extra round trip
+  if(!lastState||lastState.phase!=="result")return;
+  // Only winner (or either on draw) may advance
+  const _p1w=lastState.result==="win", _p2w=lastState.result==="lose";
+  const _winner=_p1w?"p1":_p2w?"p2":null;
+  if(_winner&&_winner!==myRole&&lastState.result!=="draw")return;
   try{
-    const st=normState(await fbGet(`rooms/${roomCode}`));
-    if(!st||st.phase!=="result")return;
+    const st=JSON.parse(JSON.stringify(lastState));
     const p1w=st.result==="win", p2w=st.result==="lose";
     const winner=p1w?"p1":p2w?"p2":null;
-    if(winner&&winner!==myRole&&st.result!=="draw")return; // only winner advances
+    if(winner&&winner!==myRole&&st.result!=="draw")return;
     if(p1w){st.p1Deck.push(st.p1Deck.shift());st.p1Deck.push(st.p2Deck.shift());st.turn="p1";}
     else if(p2w){st.p2Deck.push(st.p2Deck.shift());st.p2Deck.push(st.p1Deck.shift());st.turn="p2";}
     else{st.p1Deck.push(st.p1Deck.shift());st.p2Deck.push(st.p2Deck.shift());}
@@ -910,6 +918,7 @@ async function leaveOnline(){
 
 function renderOnline(state){
   state=normState(state); // ensure arrays are proper arrays
+  lastState=state;       // cache so pick/next don't need to re-fetch
   const app=el("app");if(!app||!myRole)return;
   if(state.phase==="waiting"&&myRole==="p1")return;
 

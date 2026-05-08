@@ -276,6 +276,7 @@ function render(html){el("app").innerHTML=html;}
 // ════════════════════════════════════════════════════════════
 let includeUTs = false;   // whether Union Territories are in the deck
 let proMode    = false;   // whether Pro stats (HDI etc) are shown
+let onlineFlipsAllowed = 2; // flips per player per game (0-5), set before creating room
 
 function getActiveDeck(){
   return includeUTs ? ALL_CARDS : ALL_CARDS.filter(c=>!c.isUT);
@@ -689,7 +690,7 @@ function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
 function startPoll(){
   stopPoll();
   pollTimer=setInterval(async()=>{
-    try{const st=await fbGet(`rooms/${roomCode}`);if(!st)return;if(st.version!==lastVer){lastVer=st.version;renderOnline(st);}}catch(e){}
+    try{const st=await fbGet(`rooms/${roomCode}`);if(!st)return;if(st.version!==lastVer){lastVer=st.version;if(st.proMode!==undefined)proMode=st.proMode;if(st.includeUTs!==undefined)includeUTs=st.includeUTs;renderOnline(st);}}catch(e){}
   },1500);
 }
 
@@ -702,7 +703,20 @@ async function showOnlineLobby(){
     <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Two devices, one game</p>
     <div class="lobby-section">
       <h3>Create a room</h3>
-      <p style="font-size:13px;color:var(--text2);margin:0 0 0.75rem">Share the 4-letter code with your friend.</p>
+      <div style="margin-bottom:0.75rem">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:0.5rem">🔄 Flips allowed per player</p>
+        <div style="display:flex;gap:6px">
+          ${[0,1,2,3,4,5].map(n=>`<span class="pill ${onlineFlipsAllowed===n?"active-pro":""}" style="flex:1;text-align:center" onclick="setOnlineFlips(${n})">${n}</span>`).join("")}
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px">${onlineFlipsAllowed===0?"No flips — pure stat battle":onlineFlipsAllowed===1?"One flip — use it wisely!":onlineFlipsAllowed===2?"Two flips — classic mode":""+onlineFlipsAllowed+" flips — chaotic mode!"}</p>
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <p style="font-size:12px;color:var(--text2);margin-bottom:0.5rem">Other settings</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <span class="pill ${includeUTs?"active-ut":""}" onclick="toggleUTs()">🏛️ UTs ${includeUTs?"ON":"OFF"}</span>
+          <span class="pill ${proMode?"active-pro":""}" onclick="togglePro()">⚡ Pro Stats ${proMode?"ON":"OFF"}</span>
+        </div>
+      </div>
       <button class="primary" onclick="createOnlineRoom()">Create room ↗</button>
     </div>
     <div class="lobby-section">
@@ -717,6 +731,13 @@ async function showOnlineLobby(){
   </div>`);
 }
 
+// Set how many flips each player gets — called from lobby selector
+function setOnlineFlips(n){
+  sfxClick();
+  onlineFlipsAllowed=n;
+  showOnlineLobby(); // re-render lobby to update pill highlight and description
+}
+
 async function createOnlineRoom(){
   sfxClick(); roomCode=makeCode(); myRole="p1";
   const s=shuffle(getActiveDeck());
@@ -726,9 +747,12 @@ async function createOnlineRoom(){
     p2Deck:s.slice(half).map(c=>c.name),
     turn:"p1",phase:"waiting",
     selectedStat:null,pickedBy:null,result:null,
-    p1Flips:2,p2Flips:2,
+    p1Flips:onlineFlipsAllowed,p2Flips:onlineFlipsAllowed,
     p1Flipped:false,p2Flipped:false,
-    isGameOver:false,version:0
+    isGameOver:false,version:0,
+    proMode:proMode,
+    includeUTs:includeUTs,
+    flipsAllowed:onlineFlipsAllowed
   };
   try{
     await fbSet(`rooms/${roomCode}`,st);
@@ -736,7 +760,12 @@ async function createOnlineRoom(){
       <h2 style="font-size:20px;font-weight:500;margin-bottom:0.25rem">Room created!</h2>
       <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Share this code with your friend</p>
       <div class="lobby-section"><div class="code-display">${roomCode}</div>
-      <p class="waiting"><span class="pulse">⏳</span> Waiting for Player 2…</p></div>
+      <p class="waiting"><span class="pulse">⏳</span> Waiting for Player 2…</p>
+      <div style="margin-top:0.75rem;font-size:12px;color:var(--text3);text-align:center">
+        🔄 ${onlineFlipsAllowed} flip${onlineFlipsAllowed!==1?"s":""} per player &nbsp;·&nbsp;
+        ${includeUTs?"🏛️ UTs ON":"🏛️ UTs OFF"} &nbsp;·&nbsp;
+        ${proMode?"⚡ Pro ON":"⚡ Pro OFF"}
+      </div></div>
       <button onclick="cancelOnlineRoom()" style="width:100%;margin-top:0.5rem">Cancel</button>
     </div>`);
     lastVer=0; startPoll();
@@ -754,6 +783,10 @@ async function joinOnlineRoom(){
     if(!st){el("je").textContent="Room not found";return;}
     if(st.phase!=="waiting"){el("je").textContent="Game already started";return;}
     roomCode=code; myRole="p2";
+    // Apply P1's settings so both players see same deck and stats
+    if(st.proMode!==undefined) proMode=st.proMode;
+    if(st.includeUTs!==undefined) includeUTs=st.includeUTs;
+    if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
     st.phase="pick"; st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
     lastVer=st.version; startPoll(); renderOnline(st);
@@ -823,11 +856,40 @@ async function onlineNextCard(){
   }catch(e){console.error(e);}
 }
 
-function leaveOnline(){sfxClick();stopPoll();showMenu();}
+async function leaveOnline(){
+  sfxClick();
+  // Write a flag to Firebase so the other player gets notified
+  try{
+    const st=await fbGet(`rooms/${roomCode}`);
+    if(st){
+      st.playerLeft=myRole; // "p1" or "p2" — whichever left
+      st.version=(st.version||0)+1;
+      await fbSet(`rooms/${roomCode}`,st);
+    }
+  }catch(e){}
+  stopPoll();
+  showMenu();
+}
 
 function renderOnline(state){
   const app=el("app");if(!app||!myRole)return;
   if(state.phase==="waiting"&&myRole==="p1")return;
+
+  // ── Opponent left notification ──────────────────────────
+  // If the OTHER player wrote a playerLeft flag, show notification
+  if(state.playerLeft && state.playerLeft !== myRole){
+    sfxLose(); stopPoll();
+    app.innerHTML=`<div class="gameover">
+      <div class="gameover-emoji">🚪</div>
+      <div class="gameover-title">Opponent left the game</div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">
+        Your opponent disconnected. The game has ended.
+      </p>
+      <button class="primary" onclick="showOnlineLobby()">Play again</button>
+      <button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button>
+    </div>`;return;
+  }
+
   const myD=myRole==="p1"?state.p1Deck:state.p2Deck;
   const opD=myRole==="p1"?state.p2Deck:state.p1Deck;
   if(!myD?.length||!opD?.length){
@@ -887,12 +949,22 @@ function renderOnline(state){
   const banner=inR?`<div class="flip-banner">${flipBannerText(p1f,p2f)}</div>`:"";
   // Opponent card
   const oppOut=myOut==="win"?"lose":myOut==="lose"?"win":myOut;
+  // Build read-only settings info from state
+  const flipsInfo  = `🔄 ${state.flipsAllowed??2} flip${(state.flipsAllowed??2)!==1?"s":""}`;
+  const utInfo     = state.includeUTs ? "🏛️ UTs" : "";
+  const proInfo    = state.proMode    ? "⚡ Pro" : "";
+  const settingsBadges = [flipsInfo, utInfo, proInfo].filter(Boolean).join(" · ");
+
   app.innerHTML=`
     <div class="toolbar">
       <span class="pill active-online">🌐 Online</span>
       <span style="font-size:11px;color:var(--text3)">Room: <strong>${roomCode}</strong> · ${myRole==="p1"?"P1":"P2"}</span>
       <span style="flex:1"></span>
       <button class="small" onclick="leaveOnline()">Leave</button>
+    </div>
+    <!-- Read-only room settings strip — visible to both players, cannot be changed mid-game -->
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-bottom:6px;padding:4px 0;background:var(--bg2);border-radius:var(--rs);border:0.5px solid var(--border)">
+      ${settingsBadges}
     </div>
     <div class="score-bar">
       <div><div class="score-label">Your cards</div><div class="score-num">${myD.length}</div></div>

@@ -297,6 +297,7 @@ let cachedState=null; // last rendered state — used to avoid Firebase propagat
 
 // Reactions
 const REACTIONS = ["🤡","🍌"];
+let mySentReactionTs = null; // timestamp of reaction WE sent — used to ignore our own
 let reactCooldown=false;   // prevents spamming
 let lastReaction=null;     // last reaction we saw (to avoid re-showing our own)
 let reactPickerOpen=false; // whether picker is visible
@@ -650,7 +651,8 @@ async function sendReaction(emoji){
   try{
     // Write reaction to Firebase — opponent's poll will pick it up
     const st=JSON.parse(JSON.stringify(cachedState||{}));
-    st.reaction={emoji, from:myRole, ts:Date.now()};
+    mySentReactionTs = Date.now();
+    st.reaction={emoji, from:myRole, ts:mySentReactionTs};
     st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
     // Update lastVer so OUR OWN poll skips this update entirely
@@ -665,13 +667,15 @@ async function sendReaction(emoji){
 // Called from poll when new state arrives — check if opponent reacted
 // RULE: only show the emoji if the OTHER player sent it, never yourself
 function checkReaction(state){
-  if(!state.reaction) return;                    // no reaction in state
+  if(!state.reaction) return;
   const r = state.reaction;
-  if(r.from === myRole) return;                  // I sent this — ignore
+  // Ignore by timestamp — catches edge cases where myRole check might fail
+  if(r.ts === mySentReactionTs) return;          // WE sent this — ignore by timestamp
+  if(r.from === myRole) return;                  // double-check by role too
   const key = `${r.from}_${r.ts}`;
   if(key === lastReaction) return;               // already shown this one
   lastReaction = key;
-  showReactionOverlay(r.emoji);                  // show on MY screen (I am the opponent)
+  showReactionOverlay(r.emoji);
 }
 
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;}

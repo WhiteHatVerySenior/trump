@@ -5,378 +5,318 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>🇮🇳 Indian States Top Trumps</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg:#0f0f0f; --bg2:#1a1a1a; --bg3:#242424;
-    --border:rgba(255,255,255,0.1); --border2:rgba(255,255,255,0.18);
-    --text:#e8e6e0; --text2:#9a9890; --text3:#5a5856;
-    --blue:#185FA5; --blue-d:#0C3E75;
-    --green:#0F6E56; --green-d:#2D6A0A;
-    --red:#993C1D; --red-d:#7A1212;
-    --amber:#854F0B; --gold:#B8860B;
-    --r:12px; --rs:8px;
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0f0f0f;--bg2:#1a1a1a;--bg3:#242424;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+    --text:#e8e6e0;--text2:#9a9890;--text3:#5a5856;
+    --blue:#185FA5;--green:#0F6E56;--red:#993C1D;--gold:#B8860B;
+    --r:12px;--rs:8px;
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
-  body { background:var(--bg); color:var(--text); min-height:100vh; }
-  .app { max-width:580px; margin:0 auto; padding:1rem; }
-  button { padding:10px 20px; border-radius:var(--rs); border:0.5px solid var(--border2); background:var(--bg3); color:var(--text); font-size:14px; cursor:pointer; transition:background 0.12s,transform 0.1s; font-family:inherit; }
-  button:hover { background:#2e2e2e; }
-  button:active { transform:scale(0.98); }
-  button.primary { background:var(--blue); border-color:var(--blue); color:#E6F1FB; width:100%; font-weight:500; }
-  button.primary:hover { background:#1a6fbf; }
-  button.small { padding:4px 10px; font-size:11px; }
-  button.flip-on { background:rgba(239,159,39,0.2); border-color:#EF9F27; color:#EF9F27; }
-  input { width:100%; padding:10px; border-radius:var(--rs); border:0.5px solid var(--border2); background:var(--bg2); color:var(--text); font-size:14px; font-family:inherit; }
-  input:focus { outline:none; border-color:var(--blue); }
-  .code-input { font-size:28px; text-align:center; letter-spacing:0.2em; font-family:monospace; margin-bottom:0.75rem; }
-  .card { background:var(--bg2); border:0.5px solid var(--border); border-radius:var(--r); overflow:hidden; }
-  .card-header { padding:0.75rem 1rem 0.5rem; }
-  .card-header.you  { background:var(--blue); }
-  .card-header.them { background:var(--red); }
-  .card-header.cpu  { background:var(--red); }
-  .card-header.p2   { background:var(--green); }
-  .card-title { font-size:15px; font-weight:500; color:#E6F1FB; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .card-fact  { font-size:10px; color:rgba(230,241,251,0.65); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-style:italic; }
-  .stat-row { display:flex; align-items:center; justify-content:space-between; height:36px; padding:0 1rem; border-bottom:0.5px solid var(--border); cursor:pointer; transition:background 0.12s; }
-  .stat-row:last-child { border-bottom:none; }
-  .stat-row:hover:not(.no-click) { background:var(--bg3); }
-  .stat-row.no-click { cursor:default; }
-  .stat-row.pro-stat { border-left:2px solid var(--gold); }
-  .stat-name  { font-size:12px; color:var(--text2); }
-  .stat-value { font-size:13px; font-weight:500; color:var(--text); }
-  .pro-badge  { font-size:9px; background:rgba(184,134,11,0.2); color:var(--gold); border-radius:4px; padding:1px 4px; margin-left:4px; vertical-align:middle; }
-  .stat-row.winner  { background:#2D6A0A; outline:2px solid #5A9E22; outline-offset:-2px; }
-  .stat-row.winner .stat-name,.stat-row.winner .stat-value { color:#E8F5D8 !important; }
-  .stat-row.loser   { background:#7A1212; outline:2px solid #C0392B; outline-offset:-2px; }
-  .stat-row.loser  .stat-name,.stat-row.loser  .stat-value { color:#FAE0E0 !important; }
-  .stat-row.selected { background:#0C3E75; outline:2px solid #185FA5; outline-offset:-2px; }
-  .stat-row.selected .stat-name,.stat-row.selected .stat-value { color:#C8DFF5 !important; }
-  .stat-row.cpu-pick { background:#0C3E75; outline:2px solid #185FA5; outline-offset:-2px; }
-  .stat-row.cpu-pick .stat-name,.stat-row.cpu-pick .stat-value { color:#C8DFF5 !important; }
-  .facedown-body { display:flex; flex-direction:column; }
-  .facedown-row  { height:36px; border-bottom:0.5px solid var(--border); background:repeating-linear-gradient(135deg,#1a0e06 0,#1a0e06 6px,#251508 6px,#251508 12px); }
-  .facedown-row:last-child { border-bottom:none; }
-  .arena { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:0.75rem 0; }
-  @keyframes cardFlipIn { 0%{transform:rotateY(-90deg) scale(0.95);opacity:0;} 60%{transform:rotateY(8deg) scale(1.02);opacity:1;} 100%{transform:rotateY(0deg) scale(1);opacity:1;} }
-  .card-flip { animation:cardFlipIn 0.35s ease-out forwards; transform-origin:left center; }
-  .score-bar { display:flex; justify-content:space-between; align-items:center; padding:0.65rem 1rem; background:var(--bg2); border-radius:var(--rs); margin-bottom:0.75rem; border:0.5px solid var(--border); }
-  .score-label { font-size:12px; color:var(--text2); }
-  .score-num   { font-size:18px; font-weight:500; }
-  .msg      { text-align:center; font-size:13px; color:var(--text2); min-height:20px; margin:0.4rem 0; }
-  .msg.win  { color:#5A9E22; font-weight:500; }
-  .msg.lose { color:#E24B4A; font-weight:500; }
-  .msg.draw { color:#EF9F27; font-weight:500; }
-  .msg.wait { color:var(--blue); font-weight:500; }
-  .turn-badge  { font-size:11px; padding:3px 12px; border-radius:20px; display:inline-block; }
-  .turn-you    { background:rgba(24,95,165,0.2); color:#85B7EB; border:0.5px solid rgba(24,95,165,0.4); }
-  .turn-them   { background:rgba(153,60,29,0.2); color:#F0997B; border:0.5px solid rgba(153,60,29,0.4); }
-  .turn-p2     { background:rgba(15,110,86,0.2); color:#5DCAA5; border:0.5px solid rgba(15,110,86,0.4); }
-  .turn-wrap   { text-align:center; margin-bottom:0.5rem; }
-  .toolbar   { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:0.75rem; }
-  .pill      { font-size:11px; padding:3px 10px; border-radius:20px; cursor:pointer; border:0.5px solid var(--border2); background:var(--bg3); color:var(--text2); user-select:none; transition:all 0.1s; white-space:nowrap; }
-  .pill:hover { background:#2e2e2e; }
-  .pill.active-cpu     { background:rgba(153,60,29,0.2); color:#F0997B; border-color:rgba(153,60,29,0.5); }
-  .pill.active-hotseat { background:rgba(15,110,86,0.2); color:#5DCAA5; border-color:rgba(15,110,86,0.5); }
-  .pill.active-online  { background:rgba(24,95,165,0.2); color:#85B7EB; border-color:rgba(24,95,165,0.5); }
-  .pill.active-easy    { background:rgba(90,158,34,0.2); color:#97C459; border-color:rgba(90,158,34,0.5); }
-  .pill.active-medium  { background:rgba(239,159,39,0.2); color:#EF9F27; border-color:rgba(239,159,39,0.5); }
-  .pill.active-hard    { background:rgba(226,75,74,0.2); color:#F09595; border-color:rgba(226,75,74,0.5); }
-  .pill.active-ut      { background:rgba(212,83,126,0.2); color:#ED93B1; border-color:rgba(212,83,126,0.5); }
-  .pill.active-pro     { background:rgba(184,134,11,0.2); color:var(--gold); border-color:rgba(184,134,11,0.5); }
-  .controls { display:flex; gap:8px; justify-content:center; margin:0.75rem 0; flex-wrap:wrap; align-items:center; }
-  .lobby { padding:1.5rem 0; }
-  .lobby-section { background:var(--bg2); border:0.5px solid var(--border); border-radius:var(--r); padding:1.25rem; margin-bottom:1rem; }
-  .lobby-section h3 { font-size:11px; font-weight:500; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem; }
-  .code-display { font-size:44px; font-weight:600; letter-spacing:0.2em; text-align:center; font-family:monospace; margin:0.5rem 0; }
-  .waiting { font-size:13px; color:var(--text2); text-align:center; margin-top:0.75rem; }
-  .pulse { display:inline-block; animation:pulse 1.4s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .err { color:#E24B4A; font-size:12px; text-align:center; margin-top:6px; min-height:18px; }
-  .room-strip  { font-size:11px; color:var(--text3); text-align:center; margin-bottom:6px; }
-  .settings-strip { font-size:10px; color:var(--text3); text-align:center; margin-bottom:6px; padding:4px; background:var(--bg2); border-radius:var(--rs); border:0.5px solid var(--border); }
-  .memory-bar  { font-size:10px; color:var(--text3); text-align:center; margin-top:4px; min-height:14px; }
-  .streak      { font-size:11px; color:#EF9F27; text-align:center; min-height:16px; margin-bottom:4px; }
-  .flip-banner { text-align:center; font-size:12px; color:#EF9F27; margin-top:4px; }
-  .history-wrap  { margin-top:1rem; }
-  .history-title { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
-  .history-row   { display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:5px 0; border-bottom:0.5px solid var(--border); color:var(--text2); }
-  .history-row:last-child { border-bottom:none; }
-  .h-win  { color:#5A9E22; }
-  .h-lose { color:#E24B4A; }
-  .h-draw { color:#EF9F27; }
-  .gameover { text-align:center; padding:3rem 1rem; }
-  .gameover-emoji { font-size:56px; margin-bottom:1rem; }
-  .gameover-title { font-size:22px; font-weight:500; margin-bottom:1.5rem; }
-  .dot    { width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:5px; }
-  .dot-ok { background:#5A9E22; }
-  .dot-err{ background:#E24B4A; }
-  .confetti-piece { position:fixed; width:10px; height:10px; top:-10px; animation:confetti-fall linear forwards; border-radius:2px; pointer-events:none; z-index:9999; }
-  @keyframes confetti-fall { to { transform:translateY(105vh) rotate(720deg); opacity:0; } }
-  .handoff { text-align:center; padding:2.5rem 1rem; background:var(--bg2); border:0.5px solid var(--border); border-radius:var(--r); }
-  .end-banner { text-align:center; padding:1rem; border-radius:var(--r); margin-top:0.5rem; }
-  .end-banner.won  { background:rgba(45,106,10,0.2); border:1px solid #5A9E22; }
-  .end-banner.lost { background:rgba(122,18,18,0.2); border:1px solid #C0392B; }
-
-  /* ── Reaction system ── */
-  .react-btn { font-size:13px; padding:4px 10px; border-radius:20px; cursor:pointer; border:0.5px solid var(--border2); background:var(--bg3); user-select:none; }
-  .react-picker { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; padding:8px; background:var(--bg2); border-radius:var(--r); border:0.5px solid var(--border); margin-top:6px; }
-  .react-pick-btn { font-size:22px; cursor:pointer; padding:4px 6px; border-radius:8px; border:none; background:transparent; transition:transform 0.1s; }
-  .react-pick-btn:hover { transform:scale(1.3); background:var(--bg3); }
-  .react-cooldown { font-size:11px; color:var(--text3); padding:4px 10px; }
-
-  /* Flying emoji animation — appears on screen when opponent reacts */
-  @keyframes flyIn {
-    0%   { transform:scale(0) rotate(-20deg); opacity:0; }
-    30%  { transform:scale(1.4) rotate(10deg); opacity:1; }
-    70%  { transform:scale(1.2) rotate(-5deg); opacity:1; }
-    100% { transform:scale(1) rotate(0deg); opacity:0; }
-  }
-  .reaction-overlay {
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    font-size:80px; z-index:9999; pointer-events:none;
-    animation:flyIn 2.5s ease-out forwards;
-  }
+  body{background:var(--bg);color:var(--text);min-height:100vh;}
+  .app{max-width:580px;margin:0 auto;padding:1rem;}
+  button{padding:10px 20px;border-radius:var(--rs);border:0.5px solid var(--border2);background:var(--bg3);color:var(--text);font-size:14px;cursor:pointer;transition:background 0.12s,transform 0.1s;font-family:inherit;}
+  button:hover{background:#2e2e2e;}button:active{transform:scale(0.98);}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#E6F1FB;width:100%;font-weight:500;}
+  button.primary:hover{background:#1a6fbf;}
+  button.small{padding:4px 10px;font-size:11px;}
+  button.flip-on{background:rgba(239,159,39,0.2);border-color:#EF9F27;color:#EF9F27;}
+  input{width:100%;padding:10px;border-radius:var(--rs);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:14px;font-family:inherit;}
+  input:focus{outline:none;border-color:var(--blue);}
+  .code-input{font-size:28px;text-align:center;letter-spacing:0.2em;font-family:monospace;margin-bottom:0.75rem;}
+  .card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;}
+  .card-header{padding:0.75rem 1rem 0.5rem;}
+  .card-header.you{background:var(--blue);} .card-header.them{background:var(--red);} .card-header.cpu{background:var(--red);} .card-header.p2{background:var(--green);}
+  .card-title{font-size:15px;font-weight:500;color:#E6F1FB;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .card-fact{font-size:10px;color:rgba(230,241,251,0.65);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic;}
+  .stat-row{display:flex;align-items:center;justify-content:space-between;height:36px;padding:0 1rem;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background 0.12s;}
+  .stat-row:last-child{border-bottom:none;} .stat-row:hover:not(.no-click){background:var(--bg3);} .stat-row.no-click{cursor:default;} .stat-row.pro-stat{border-left:2px solid var(--gold);}
+  .stat-name{font-size:12px;color:var(--text2);} .stat-value{font-size:13px;font-weight:500;color:var(--text);}
+  .pro-badge{font-size:9px;background:rgba(184,134,11,0.2);color:var(--gold);border-radius:4px;padding:1px 4px;margin-left:4px;vertical-align:middle;}
+  .stat-row.winner{background:#2D6A0A;outline:2px solid #5A9E22;outline-offset:-2px;}
+  .stat-row.winner .stat-name,.stat-row.winner .stat-value{color:#E8F5D8 !important;}
+  .stat-row.loser{background:#7A1212;outline:2px solid #C0392B;outline-offset:-2px;}
+  .stat-row.loser .stat-name,.stat-row.loser .stat-value{color:#FAE0E0 !important;}
+  .stat-row.selected{background:#0C3E75;outline:2px solid #185FA5;outline-offset:-2px;}
+  .stat-row.selected .stat-name,.stat-row.selected .stat-value{color:#C8DFF5 !important;}
+  .stat-row.cpu-pick{background:#0C3E75;outline:2px solid #185FA5;outline-offset:-2px;}
+  .stat-row.cpu-pick .stat-name,.stat-row.cpu-pick .stat-value{color:#C8DFF5 !important;}
+  .facedown-body{display:flex;flex-direction:column;}
+  .facedown-row{height:36px;border-bottom:0.5px solid var(--border);background:repeating-linear-gradient(135deg,#1a0e06 0,#1a0e06 6px,#251508 6px,#251508 12px);}
+  .facedown-row:last-child{border-bottom:none;}
+  .arena{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0.75rem 0;}
+  @keyframes cardFlipIn{0%{transform:rotateY(-90deg) scale(0.95);opacity:0;}60%{transform:rotateY(8deg) scale(1.02);opacity:1;}100%{transform:rotateY(0deg) scale(1);opacity:1;}}
+  .card-flip{animation:cardFlipIn 0.35s ease-out forwards;transform-origin:left center;}
+  .score-bar{display:flex;justify-content:space-between;align-items:center;padding:0.65rem 1rem;background:var(--bg2);border-radius:var(--rs);margin-bottom:0.75rem;border:0.5px solid var(--border);}
+  .score-label{font-size:12px;color:var(--text2);} .score-num{font-size:18px;font-weight:500;}
+  .msg{text-align:center;font-size:13px;color:var(--text2);min-height:20px;margin:0.4rem 0;}
+  .msg.win{color:#5A9E22;font-weight:500;} .msg.lose{color:#E24B4A;font-weight:500;} .msg.draw{color:#EF9F27;font-weight:500;} .msg.wait{color:var(--blue);font-weight:500;}
+  .turn-badge{font-size:11px;padding:3px 12px;border-radius:20px;display:inline-block;}
+  .turn-you{background:rgba(24,95,165,0.2);color:#85B7EB;border:0.5px solid rgba(24,95,165,0.4);}
+  .turn-them{background:rgba(153,60,29,0.2);color:#F0997B;border:0.5px solid rgba(153,60,29,0.4);}
+  .turn-p2{background:rgba(15,110,86,0.2);color:#5DCAA5;border:0.5px solid rgba(15,110,86,0.4);}
+  .turn-wrap{text-align:center;margin-bottom:0.5rem;}
+  .toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:0.75rem;}
+  .pill{font-size:11px;padding:3px 10px;border-radius:20px;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text2);user-select:none;transition:all 0.1s;white-space:nowrap;}
+  .pill:hover{background:#2e2e2e;}
+  .pill.active-cpu{background:rgba(153,60,29,0.2);color:#F0997B;border-color:rgba(153,60,29,0.5);}
+  .pill.active-hotseat{background:rgba(15,110,86,0.2);color:#5DCAA5;border-color:rgba(15,110,86,0.5);}
+  .pill.active-online{background:rgba(24,95,165,0.2);color:#85B7EB;border-color:rgba(24,95,165,0.5);}
+  .pill.active-easy{background:rgba(90,158,34,0.2);color:#97C459;border-color:rgba(90,158,34,0.5);}
+  .pill.active-medium{background:rgba(239,159,39,0.2);color:#EF9F27;border-color:rgba(239,159,39,0.5);}
+  .pill.active-hard{background:rgba(226,75,74,0.2);color:#F09595;border-color:rgba(226,75,74,0.5);}
+  .pill.active-ut{background:rgba(212,83,126,0.2);color:#ED93B1;border-color:rgba(212,83,126,0.5);}
+  .pill.active-pro{background:rgba(184,134,11,0.2);color:var(--gold);border-color:rgba(184,134,11,0.5);}
+  .controls{display:flex;gap:8px;justify-content:center;margin:0.75rem 0;flex-wrap:wrap;align-items:center;}
+  .lobby{padding:1.5rem 0;}
+  .lobby-section{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:1.25rem;margin-bottom:1rem;}
+  .lobby-section h3{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;}
+  .code-display{font-size:44px;font-weight:600;letter-spacing:0.2em;text-align:center;font-family:monospace;margin:0.5rem 0;}
+  .waiting{font-size:13px;color:var(--text2);text-align:center;margin-top:0.75rem;}
+  .pulse{display:inline-block;animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  .err{color:#E24B4A;font-size:12px;text-align:center;margin-top:6px;min-height:18px;}
+  .settings-strip{font-size:10px;color:var(--text3);text-align:center;margin-bottom:6px;padding:4px;background:var(--bg2);border-radius:var(--rs);border:0.5px solid var(--border);}
+  .memory-bar{font-size:10px;color:var(--text3);text-align:center;margin-top:4px;min-height:14px;}
+  .streak{font-size:11px;color:#EF9F27;text-align:center;min-height:16px;margin-bottom:4px;}
+  .flip-banner{text-align:center;font-size:12px;color:#EF9F27;margin-top:4px;}
+  .history-wrap{margin-top:1rem;}
+  .history-title{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;}
+  .history-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:5px 0;border-bottom:0.5px solid var(--border);color:var(--text2);}
+  .history-row:last-child{border-bottom:none;}
+  .h-win{color:#5A9E22;} .h-lose{color:#E24B4A;} .h-draw{color:#EF9F27;}
+  .gameover{text-align:center;padding:3rem 1rem;}
+  .gameover-emoji{font-size:56px;margin-bottom:1rem;}
+  .gameover-title{font-size:22px;font-weight:500;margin-bottom:1.5rem;}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+  .dot-ok{background:#5A9E22;} .dot-err{background:#E24B4A;}
+  .confetti-piece{position:fixed;width:10px;height:10px;top:-10px;animation:confetti-fall linear forwards;border-radius:2px;pointer-events:none;z-index:9999;}
+  @keyframes confetti-fall{to{transform:translateY(105vh) rotate(720deg);opacity:0;}}
+  .handoff{text-align:center;padding:2.5rem 1rem;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);}
+  .end-banner{text-align:center;padding:1rem;border-radius:var(--r);margin-top:0.5rem;}
+  .end-banner.won{background:rgba(45,106,10,0.2);border:1px solid #5A9E22;}
+  .end-banner.lost{background:rgba(122,18,18,0.2);border:1px solid #C0392B;}
+  /* Reactions */
+  .react-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;}
+  .react-btn{font-size:13px;padding:4px 12px;border-radius:20px;cursor:pointer;border:0.5px solid var(--border2);background:var(--bg3);}
+  .react-picker{display:flex;gap:8px;justify-content:center;padding:8px;background:var(--bg2);border-radius:var(--r);border:0.5px solid var(--border);margin-top:6px;}
+  .react-opt{font-size:28px;cursor:pointer;padding:4px 8px;border-radius:8px;border:none;background:transparent;transition:transform 0.1s;}
+  .react-opt:hover{transform:scale(1.3);background:var(--bg3);}
+  .react-cd{font-size:11px;color:var(--text3);}
+  @keyframes flyIn{0%{transform:scale(0) rotate(-20deg);opacity:0;}30%{transform:scale(1.5) rotate(10deg);opacity:1;}70%{transform:scale(1.3) rotate(-5deg);opacity:1;}100%{transform:scale(1) rotate(0);opacity:0;}}
+  .rx-overlay{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:90px;z-index:9999;pointer-events:none;animation:flyIn 2.5s ease-out forwards;}
 </style>
 </head>
 <body>
 <div class="app" id="app"></div>
 <script>
-
-// ════════════════════════════════════════════════════════
-// FIREBASE REST API — plain fetch(), no SDK needed
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// FIREBASE — plain REST, no SDK
+// ══════════════════════════════════════════════════
 const FB  = "https://trump-0805-default-rtdb.asia-southeast1.firebasedatabase.app";
 const KEY = "AIzaSyAvng0CLs7bwUZBEGfhQhOZR4L44LW3E2g";
+const fbGet = async p=>{const r=await fetch(`${FB}/${p}.json?auth=${KEY}`);if(!r.ok)throw new Error(r.status);return r.json();};
+const fbSet = async(p,d)=>{const r=await fetch(`${FB}/${p}.json?auth=${KEY}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});if(!r.ok)throw new Error(r.status);return r.json();};
+const fbDel = async p=>fetch(`${FB}/${p}.json?auth=${KEY}`,{method:"DELETE"});
+const toArr = v=>{if(!v)return[];if(Array.isArray(v))return v;return Object.keys(v).sort((a,b)=>Number(a)-Number(b)).map(k=>v[k]);};
 
-async function fbGet(path){
-  const r = await fetch(`${FB}/${path}.json?auth=${KEY}`);
-  if(!r.ok) throw new Error("fbGet "+r.status);
-  return r.json();
-}
-async function fbSet(path, data){
-  const r = await fetch(`${FB}/${path}.json?auth=${KEY}`, {
-    method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)
-  });
-  if(!r.ok) throw new Error("fbSet "+r.status);
-  return r.json();
-}
-async function fbDel(path){
-  await fetch(`${FB}/${path}.json?auth=${KEY}`, {method:"DELETE"});
-}
-
-// Firebase sometimes returns arrays as objects {0:"a",1:"b"}
-// toArr safely converts either format back to a real array preserving order
-function toArr(v){
-  if(!v) return [];
-  if(Array.isArray(v)) return v;
-  return Object.keys(v).sort((a,b)=>Number(a)-Number(b)).map(k=>v[k]);
-}
-
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // AUDIO
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 let actx=null;
-function gc(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;}
-function pt(f,t,sv,ev,s,d){try{const c=gc(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.setValueAtTime(f,c.currentTime+s);g.gain.setValueAtTime(sv,c.currentTime+s);g.gain.exponentialRampToValueAtTime(Math.max(ev,0.001),c.currentTime+s+d);o.start(c.currentTime+s);o.stop(c.currentTime+s+d+0.02);}catch(e){}}
-const sfxClick   = () => pt(800,'sine',0.15,0.001,0,0.06);
-const sfxWin     = () => { [[523,0],[659,0.1],[784,0.2],[1047,0.32]].forEach(([f,t])=>pt(f,'triangle',0.22,0.001,t,0.25)); };
-const sfxLose    = () => { pt(300,'sawtooth',0.18,0.001,0,0.15); pt(220,'sawtooth',0.14,0.001,0.15,0.25); pt(150,'sine',0.12,0.001,0.35,0.3); };
-const sfxDraw    = () => { pt(440,'sine',0.12,0.001,0,0.12); pt(440,'sine',0.10,0.001,0.15,0.12); };
-const sfxFanfare = () => { [[523,0],[587,0.08],[659,0.16],[698,0.24],[784,0.32],[880,0.42],[1047,0.52]].forEach(([f,t])=>pt(f,'triangle',0.2,0.001,t,0.22)); [523,659,784].forEach(f=>pt(f,'triangle',0.18,0.001,0.78,0.5)); };
-const sfxBoom    = () => { [300,250,200,160].forEach((f,i)=>pt(f,'sawtooth',0.2,0.001,i*0.15,0.2)); };
+const gc=()=>{if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;};
+const pt=(f,t,sv,ev,s,d)=>{try{const c=gc(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type=t;o.frequency.setValueAtTime(f,c.currentTime+s);g.gain.setValueAtTime(sv,c.currentTime+s);g.gain.exponentialRampToValueAtTime(Math.max(ev,0.001),c.currentTime+s+d);o.start(c.currentTime+s);o.stop(c.currentTime+s+d+0.02);}catch(e){}};
+const sfxClick=()=>pt(800,'sine',0.15,0.001,0,0.06);
+const sfxWin=()=>{[[523,0],[659,0.1],[784,0.2],[1047,0.32]].forEach(([f,t])=>pt(f,'triangle',0.22,0.001,t,0.25));};
+const sfxLose=()=>{pt(300,'sawtooth',0.18,0.001,0,0.15);pt(220,'sawtooth',0.14,0.001,0.15,0.25);pt(150,'sine',0.12,0.001,0.35,0.3);};
+const sfxDraw=()=>{pt(440,'sine',0.12,0.001,0,0.12);pt(440,'sine',0.10,0.001,0.15,0.12);};
+const sfxFanfare=()=>{[[523,0],[587,0.08],[659,0.16],[698,0.24],[784,0.32],[880,0.42],[1047,0.52]].forEach(([f,t])=>pt(f,'triangle',0.2,0.001,t,0.22));[523,659,784].forEach(f=>pt(f,'triangle',0.18,0.001,0.78,0.5));};
+const sfxBoom=()=>{[300,250,200,160].forEach((f,i)=>pt(f,'sawtooth',0.2,0.001,i*0.15,0.2));};
 
-
-// ════════════════════════════════════════════════════════
-// GAME DATA — 28 States + 8 Union Territories
-// ════════════════════════════════════════════════════════
-const ALL_CARDS = [
-  {name:"Rajasthan",         emoji:"🏜️", population:81.03,  area:342239, gdp:135, literacy:66.1, heritage:2, border:1170, forest:4.9,  hdi:0.629, airports:7,  districts:33, internet:35, fact:"Largest state by area. The Thar Desert covers 60% of it."},
-  {name:"Punjab",            emoji:"🌾", population:30.14,  area:50362,  gdp:88,  literacy:75.8, heritage:0, border:553,  forest:3.7,  hdi:0.723, airports:3,  districts:23, internet:51, fact:"Feeds the nation — produces 50% of India's wheat."},
-  {name:"Haryana",           emoji:"🏏", population:28.67,  area:44212,  gdp:105, literacy:75.6, heritage:0, border:0,    forest:3.6,  hdi:0.708, airports:2,  districts:22, internet:46, fact:"Borders Delhi on 3 sides. Most urbanised state after Goa."},
-  {name:"Himachal Pradesh",  emoji:"❄️", population:7.45,   area:55673,  gdp:28,  literacy:82.8, heritage:0, border:1177, forest:27.7, hdi:0.725, airports:3,  districts:12, internet:56, fact:"Apple capital of India — produces 25% of the country's apples."},
-  {name:"Uttarakhand",       emoji:"🏔️", population:11.25,  area:53483,  gdp:42,  literacy:78.8, heritage:1, border:1030, forest:45.4, hdi:0.684, airports:3,  districts:13, internet:48, fact:"Source of the Ganges and Yamuna rivers."},
-  {name:"Uttar Pradesh",     emoji:"🕌", population:231.50, area:240928, gdp:215, literacy:73.0, heritage:3, border:4005, forest:6.1,  hdi:0.596, airports:10, districts:75, internet:29, fact:"Most populated state. Home to the Taj Mahal and Varanasi."},
-  {name:"Bihar",             emoji:"🌾", population:128.50, area:94163,  gdp:82,  literacy:61.8, heritage:0, border:1751, forest:7.3,  hdi:0.574, airports:4,  districts:38, internet:24, fact:"Nalanda University — world's first residential university — was here."},
-  {name:"Sikkim",            emoji:"🏔️", population:0.66,   area:7096,   gdp:5,   literacy:81.4, heritage:1, border:509,  forest:47.3, hdi:0.716, airports:1,  districts:6,  internet:52, fact:"First fully organic state in India. 100% organic farming since 2016."},
-  {name:"Arunachal Pradesh", emoji:"🏞️", population:1.57,   area:83743,  gdp:8,   literacy:65.4, heritage:0, border:2848, forest:79.6, hdi:0.660, airports:2,  districts:25, internet:38, fact:"Sun rises first in India here. Has India's longest border with China."},
-  {name:"Nagaland",          emoji:"🦅", population:2.18,   area:16579,  gdp:7,   literacy:79.5, heritage:0, border:215,  forest:82.4, hdi:0.679, airports:1,  districts:12, internet:42, fact:"16 major tribes, each with a distinct language and culture."},
-  {name:"Manipur",           emoji:"🎨", population:3.09,   area:22327,  gdp:9,   literacy:76.9, heritage:0, border:398,  forest:77.7, hdi:0.696, airports:1,  districts:16, internet:41, fact:"Birthplace of polo. Loktak Lake has unique floating islands."},
-  {name:"Mizoram",           emoji:"🌿", population:1.24,   area:21081,  gdp:7,   literacy:91.3, heritage:0, border:722,  forest:85.4, hdi:0.705, airports:1,  districts:11, internet:52, fact:"Highest forest cover of any state (85%). Nearly completely forested."},
-  {name:"Tripura",           emoji:"🦋", population:3.99,   area:10486,  gdp:12,  literacy:87.2, heritage:0, border:856,  forest:60.9, hdi:0.658, airports:1,  districts:8,  internet:39, fact:"Second largest rubber producer in India after Kerala."},
-  {name:"Meghalaya",         emoji:"🌧️", population:3.37,   area:22429,  gdp:10,  literacy:74.4, heritage:0, border:884,  forest:76.4, hdi:0.650, airports:1,  districts:12, internet:38, fact:"Wettest place on Earth — Mawsynram gets 12,000mm of rain per year."},
-  {name:"Assam",             emoji:"🍵", population:35.61,  area:78438,  gdp:48,  literacy:72.2, heritage:2, border:1880, forest:35.3, hdi:0.614, airports:5,  districts:35, internet:32, fact:"Produces 55% of India's tea. Home to the one-horned rhino."},
-  {name:"West Bengal",       emoji:"🐯", population:99.61,  area:88752,  gdp:175, literacy:76.3, heritage:1, border:2341, forest:19.0, hdi:0.641, airports:5,  districts:23, internet:36, fact:"Only state sharing borders with 5 countries."},
-  {name:"Jharkhand",         emoji:"⛏️", population:38.59,  area:79716,  gdp:65,  literacy:66.4, heritage:0, border:0,    forest:29.6, hdi:0.599, airports:3,  districts:24, internet:28, fact:"Mineral capital — holds 40% of India's mineral reserves."},
-  {name:"Odisha",            emoji:"🎭", population:46.36,  area:155707, gdp:90,  literacy:72.9, heritage:2, border:480,  forest:33.1, hdi:0.606, airports:4,  districts:30, internet:30, fact:"Largest mass sea turtle nesting site in the world at Gahirmatha."},
-  {name:"Chhattisgarh",      emoji:"🌲", population:29.44,  area:135192, gdp:58,  literacy:70.3, heritage:0, border:0,    forest:44.2, hdi:0.613, airports:3,  districts:33, internet:30, fact:"44% forest cover. Has more than 44 protected wildlife sanctuaries."},
-  {name:"Madhya Pradesh",    emoji:"🐆", population:85.36,  area:308252, gdp:130, literacy:69.3, heritage:3, border:0,    forest:25.1, hdi:0.606, airports:5,  districts:55, internet:30, fact:"Tiger capital of India — more wild tigers than any other state."},
-  {name:"Gujarat",           emoji:"🦁", population:63.87,  area:196024, gdp:260, literacy:78.0, heritage:3, border:1665, forest:7.5,  hdi:0.672, airports:9,  districts:33, internet:46, fact:"Only place in the world where Asiatic lions survive in the wild."},
-  {name:"Maharashtra",       emoji:"🏙️", population:123.14, area:307713, gdp:435, literacy:82.9, heritage:5, border:720,  forest:16.5, hdi:0.696, airports:18, districts:36, internet:49, fact:"Largest economy in India. Mumbai handles 40% of India's maritime trade."},
-  {name:"Telangana",         emoji:"💎", population:39.36,  area:112077, gdp:145, literacy:72.8, heritage:1, border:0,    forest:24.0, hdi:0.669, airports:3,  districts:33, internet:42, fact:"India's youngest state, carved from Andhra Pradesh in 2014."},
-  {name:"Andhra Pradesh",    emoji:"🌊", population:53.90,  area:162975, gdp:140, literacy:67.4, heritage:1, border:974,  forest:23.0, hdi:0.649, airports:6,  districts:26, internet:38, fact:"Second longest coastline in India at 974km along the Bay of Bengal."},
-  {name:"Karnataka",         emoji:"🌿", population:67.56,  area:191791, gdp:270, literacy:75.4, heritage:3, border:320,  forest:19.6, hdi:0.682, airports:8,  districts:31, internet:43, fact:"Sandalwood, silk and software capital of India."},
-  {name:"Goa",               emoji:"🏖️", population:1.54,   area:3702,   gdp:20,  literacy:88.7, heritage:1, border:105,  forest:36.4, hdi:0.761, airports:1,  districts:2,  internet:61, fact:"Smallest state. Has the highest per-capita income of any state."},
-  {name:"Kerala",            emoji:"🌴", population:35.70,  area:38852,  gdp:105, literacy:94.0, heritage:1, border:590,  forest:29.1, hdi:0.779, airports:5,  districts:14, internet:54, fact:"100% literacy. Highest Human Development Index of any Indian state."},
-  {name:"Tamil Nadu",        emoji:"🛕", population:77.84,  area:130058, gdp:280, literacy:80.1, heritage:6, border:1076, forest:20.3, hdi:0.709, airports:8,  districts:38, internet:44, fact:"6 UNESCO World Heritage Sites — more than any other Indian state."},
+// ══════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════
+const ALL_CARDS=[
+  {name:"Rajasthan",emoji:"🏜️",population:81.03,area:342239,gdp:135,literacy:66.1,heritage:2,border:1170,forest:4.9,hdi:0.629,airports:7,districts:33,internet:35,fact:"Largest state by area. The Thar Desert covers 60% of it."},
+  {name:"Punjab",emoji:"🌾",population:30.14,area:50362,gdp:88,literacy:75.8,heritage:0,border:553,forest:3.7,hdi:0.723,airports:3,districts:23,internet:51,fact:"Feeds the nation — produces 50% of India's wheat."},
+  {name:"Haryana",emoji:"🏏",population:28.67,area:44212,gdp:105,literacy:75.6,heritage:0,border:0,forest:3.6,hdi:0.708,airports:2,districts:22,internet:46,fact:"Borders Delhi on 3 sides. Most urbanised state after Goa."},
+  {name:"Himachal Pradesh",emoji:"❄️",population:7.45,area:55673,gdp:28,literacy:82.8,heritage:0,border:1177,forest:27.7,hdi:0.725,airports:3,districts:12,internet:56,fact:"Apple capital of India — produces 25% of the country's apples."},
+  {name:"Uttarakhand",emoji:"🏔️",population:11.25,area:53483,gdp:42,literacy:78.8,heritage:1,border:1030,forest:45.4,hdi:0.684,airports:3,districts:13,internet:48,fact:"Source of the Ganges and Yamuna rivers."},
+  {name:"Uttar Pradesh",emoji:"🕌",population:231.50,area:240928,gdp:215,literacy:73.0,heritage:3,border:4005,forest:6.1,hdi:0.596,airports:10,districts:75,internet:29,fact:"Most populated state. Home to the Taj Mahal."},
+  {name:"Bihar",emoji:"🌾",population:128.50,area:94163,gdp:82,literacy:61.8,heritage:0,border:1751,forest:7.3,hdi:0.574,airports:4,districts:38,internet:24,fact:"Nalanda University — world's first residential university — was here."},
+  {name:"Sikkim",emoji:"🏔️",population:0.66,area:7096,gdp:5,literacy:81.4,heritage:1,border:509,forest:47.3,hdi:0.716,airports:1,districts:6,internet:52,fact:"First fully organic state in India."},
+  {name:"Arunachal Pradesh",emoji:"🏞️",population:1.57,area:83743,gdp:8,literacy:65.4,heritage:0,border:2848,forest:79.6,hdi:0.660,airports:2,districts:25,internet:38,fact:"Sun rises first in India here. Longest border with China."},
+  {name:"Nagaland",emoji:"🦅",population:2.18,area:16579,gdp:7,literacy:79.5,heritage:0,border:215,forest:82.4,hdi:0.679,airports:1,districts:12,internet:42,fact:"16 major tribes, each with a distinct language."},
+  {name:"Manipur",emoji:"🎨",population:3.09,area:22327,gdp:9,literacy:76.9,heritage:0,border:398,forest:77.7,hdi:0.696,airports:1,districts:16,internet:41,fact:"Birthplace of polo. Loktak Lake has floating islands."},
+  {name:"Mizoram",emoji:"🌿",population:1.24,area:21081,gdp:7,literacy:91.3,heritage:0,border:722,forest:85.4,hdi:0.705,airports:1,districts:11,internet:52,fact:"Highest forest cover of any state at 85%."},
+  {name:"Tripura",emoji:"🦋",population:3.99,area:10486,gdp:12,literacy:87.2,heritage:0,border:856,forest:60.9,hdi:0.658,airports:1,districts:8,internet:39,fact:"Second largest rubber producer in India."},
+  {name:"Meghalaya",emoji:"🌧️",population:3.37,area:22429,gdp:10,literacy:74.4,heritage:0,border:884,forest:76.4,hdi:0.650,airports:1,districts:12,internet:38,fact:"Wettest place on Earth — Mawsynram gets 12,000mm rain/year."},
+  {name:"Assam",emoji:"🍵",population:35.61,area:78438,gdp:48,literacy:72.2,heritage:2,border:1880,forest:35.3,hdi:0.614,airports:5,districts:35,internet:32,fact:"Produces 55% of India's tea. Home to the one-horned rhino."},
+  {name:"West Bengal",emoji:"🐯",population:99.61,area:88752,gdp:175,literacy:76.3,heritage:1,border:2341,forest:19.0,hdi:0.641,airports:5,districts:23,internet:36,fact:"Only state sharing borders with 5 countries."},
+  {name:"Jharkhand",emoji:"⛏️",population:38.59,area:79716,gdp:65,literacy:66.4,heritage:0,border:0,forest:29.6,hdi:0.599,airports:3,districts:24,internet:28,fact:"Mineral capital — holds 40% of India's mineral reserves."},
+  {name:"Odisha",emoji:"🎭",population:46.36,area:155707,gdp:90,literacy:72.9,heritage:2,border:480,forest:33.1,hdi:0.606,airports:4,districts:30,internet:30,fact:"World's largest sea turtle nesting site at Gahirmatha."},
+  {name:"Chhattisgarh",emoji:"🌲",population:29.44,area:135192,gdp:58,literacy:70.3,heritage:0,border:0,forest:44.2,hdi:0.613,airports:3,districts:33,internet:30,fact:"44% forest cover and 44 protected wildlife sanctuaries."},
+  {name:"Madhya Pradesh",emoji:"🐆",population:85.36,area:308252,gdp:130,literacy:69.3,heritage:3,border:0,forest:25.1,hdi:0.606,airports:5,districts:55,internet:30,fact:"Tiger capital of India — most wild tigers of any state."},
+  {name:"Gujarat",emoji:"🦁",population:63.87,area:196024,gdp:260,literacy:78.0,heritage:3,border:1665,forest:7.5,hdi:0.672,airports:9,districts:33,internet:46,fact:"Only place in the world where Asiatic lions survive in the wild."},
+  {name:"Maharashtra",emoji:"🏙️",population:123.14,area:307713,gdp:435,literacy:82.9,heritage:5,border:720,forest:16.5,hdi:0.696,airports:18,districts:36,internet:49,fact:"Largest economy. Mumbai handles 40% of India's maritime trade."},
+  {name:"Telangana",emoji:"💎",population:39.36,area:112077,gdp:145,literacy:72.8,heritage:1,border:0,forest:24.0,hdi:0.669,airports:3,districts:33,internet:42,fact:"India's youngest state, carved from Andhra Pradesh in 2014."},
+  {name:"Andhra Pradesh",emoji:"🌊",population:53.90,area:162975,gdp:140,literacy:67.4,heritage:1,border:974,forest:23.0,hdi:0.649,airports:6,districts:26,internet:38,fact:"Second longest coastline in India at 974km."},
+  {name:"Karnataka",emoji:"🌿",population:67.56,area:191791,gdp:270,literacy:75.4,heritage:3,border:320,forest:19.6,hdi:0.682,airports:8,districts:31,internet:43,fact:"Sandalwood, silk and software capital of India."},
+  {name:"Goa",emoji:"🏖️",population:1.54,area:3702,gdp:20,literacy:88.7,heritage:1,border:105,forest:36.4,hdi:0.761,airports:1,districts:2,internet:61,fact:"Smallest state with highest per-capita income in India."},
+  {name:"Kerala",emoji:"🌴",population:35.70,area:38852,gdp:105,literacy:94.0,heritage:1,border:590,forest:29.1,hdi:0.779,airports:5,districts:14,internet:54,fact:"100% literacy. Highest Human Development Index in India."},
+  {name:"Tamil Nadu",emoji:"🛕",population:77.84,area:130058,gdp:280,literacy:80.1,heritage:6,border:1076,forest:20.3,hdi:0.709,airports:8,districts:38,internet:44,fact:"6 UNESCO sites — more than any other Indian state."},
   // Union Territories
-  {name:"Delhi",             emoji:"🏛️", isUT:true, population:32.06, area:1484,  gdp:110, literacy:86.2, heritage:3, border:0,    forest:14.4, hdi:0.746, airports:1, districts:11, internet:68, fact:"India's capital and most densely populated territory."},
-  {name:"Jammu & Kashmir",   emoji:"🏔️", isUT:true, population:13.60, area:42241, gdp:22,  literacy:68.8, heritage:0, border:1225, forest:55.0, hdi:0.688, airports:3, districts:20, internet:34, fact:"India's northernmost UT. Became a UT in 2019, previously a state."},
-  {name:"Ladakh",            emoji:"🌄", isUT:true, population:0.27,  area:59146, gdp:2,   literacy:77.2, heritage:0, border:1597, forest:6.0,  hdi:0.650, airports:2, districts:2,  internet:20, fact:"World's highest motorable road — Khardung La at 5,359m."},
-  {name:"Chandigarh",        emoji:"🏙️", isUT:true, population:1.18,  area:114,   gdp:8,   literacy:86.4, heritage:0, border:0,    forest:14.1, hdi:0.775, airports:1, districts:1,  internet:65, fact:"Only city planned by a world-famous architect — Le Corbusier."},
-  {name:"Puducherry",        emoji:"🌊", isUT:true, population:1.65,  area:479,   gdp:5,   literacy:85.9, heritage:0, border:30,   forest:4.6,  hdi:0.738, airports:0, districts:4,  internet:55, fact:"Former French colony — still has French architecture and laws."},
-  {name:"Andaman & Nicobar", emoji:"🏝️", isUT:true, population:0.43,  area:8249,  gdp:3,   literacy:86.3, heritage:0, border:0,    forest:81.8, hdi:0.740, airports:3, districts:3,  internet:35, fact:"581 islands, only 37 inhabited. Among Asia's finest coral reefs."},
-  {name:"D&NH and D&D",      emoji:"🏭", isUT:true, population:0.59,  area:603,   gdp:4,   literacy:78.0, heritage:0, border:0,    forest:39.9, hdi:0.705, airports:0, districts:3,  internet:45, fact:"Most industrialised UT per sq km after merger in 2020."},
-  {name:"Lakshadweep",       emoji:"🌴", isUT:true, population:0.065, area:32,    gdp:0.3, literacy:91.8, heritage:0, border:0,    forest:90.0, hdi:0.739, airports:1, districts:1,  internet:48, fact:"Smallest UT. 36 coral islands, only 10 inhabited."},
+  {name:"Delhi",emoji:"🏛️",isUT:true,population:32.06,area:1484,gdp:110,literacy:86.2,heritage:3,border:0,forest:14.4,hdi:0.746,airports:1,districts:11,internet:68,fact:"India's capital and most densely populated territory."},
+  {name:"Jammu & Kashmir",emoji:"🏔️",isUT:true,population:13.60,area:42241,gdp:22,literacy:68.8,heritage:0,border:1225,forest:55.0,hdi:0.688,airports:3,districts:20,internet:34,fact:"India's northernmost UT, became a UT in 2019."},
+  {name:"Ladakh",emoji:"🌄",isUT:true,population:0.27,area:59146,gdp:2,literacy:77.2,heritage:0,border:1597,forest:6.0,hdi:0.650,airports:2,districts:2,internet:20,fact:"World's highest motorable road — Khardung La at 5,359m."},
+  {name:"Chandigarh",emoji:"🏙️",isUT:true,population:1.18,area:114,gdp:8,literacy:86.4,heritage:0,border:0,forest:14.1,hdi:0.775,airports:1,districts:1,internet:65,fact:"Only city planned by Le Corbusier in India."},
+  {name:"Puducherry",emoji:"🌊",isUT:true,population:1.65,area:479,gdp:5,literacy:85.9,heritage:0,border:30,forest:4.6,hdi:0.738,airports:0,districts:4,internet:55,fact:"Former French colony with French architecture and laws."},
+  {name:"Andaman & Nicobar",emoji:"🏝️",isUT:true,population:0.43,area:8249,gdp:3,literacy:86.3,heritage:0,border:0,forest:81.8,hdi:0.740,airports:3,districts:3,internet:35,fact:"581 islands, only 37 inhabited. Asia's finest coral reefs."},
+  {name:"D&NH and D&D",emoji:"🏭",isUT:true,population:0.59,area:603,gdp:4,literacy:78.0,heritage:0,border:0,forest:39.9,hdi:0.705,airports:0,districts:3,internet:45,fact:"Most industrialised UT per sq km after 2020 merger."},
+  {name:"Lakshadweep",emoji:"🌴",isUT:true,population:0.065,area:32,gdp:0.3,literacy:91.8,heritage:0,border:0,forest:90.0,hdi:0.739,airports:1,districts:1,internet:48,fact:"Smallest UT. 36 coral islands, only 10 inhabited."},
 ];
-
-const CORE_STATS = [
-  {key:"population", label:"Population (M)"},
-  {key:"area",       label:"Area (sq km)"},
-  {key:"gdp",        label:"GDP ($ billion)"},
-  {key:"literacy",   label:"Literacy (%)"},
-  {key:"heritage",   label:"UNESCO sites"},
-  {key:"border",     label:"Coast+Border (km)"},
-  {key:"forest",     label:"Forest cover (%)"},
-];
-const PRO_STATS = [
-  {key:"hdi",       label:"HDI score"},
-  {key:"airports",  label:"Airports"},
-  {key:"districts", label:"Districts"},
-  {key:"internet",  label:"Internet (%)"},
-];
-const RANGES = {
-  population:[0.065,231.5], area:[32,342239], gdp:[0.3,435],
-  literacy:[61.8,94.0], heritage:[0,6], border:[0,4005], forest:[3.6,90.0],
-  hdi:[0.574,0.779], airports:[0,18], districts:[1,75], internet:[20,68],
-};
-
-function getActiveStats(){ return proMode ? [...CORE_STATS,...PRO_STATS] : CORE_STATS; }
-function getActiveDeck(){ return includeUTs ? ALL_CARDS : ALL_CARDS.filter(c=>!c.isUT); }
-
-function fmt(k,v){
-  if(v===undefined||v===null) return "—";
-  if(k==="population") return v.toFixed(2)+"M";
-  if(k==="area")       return v.toLocaleString();
-  if(k==="gdp")        return "$"+v+"B";
-  if(k==="literacy"||k==="forest"||k==="internet") return v.toFixed(1)+"%";
-  if(k==="hdi")        return v.toFixed(3);
-  if(k==="border")     return v===0?"None":v.toLocaleString()+" km";
-  return v;
-}
+const CORE_STATS=[{key:"population",label:"Population (M)"},{key:"area",label:"Area (sq km)"},{key:"gdp",label:"GDP ($ billion)"},{key:"literacy",label:"Literacy (%)"},{key:"heritage",label:"UNESCO sites"},{key:"border",label:"Coast+Border (km)"},{key:"forest",label:"Forest cover (%)"}];
+const PRO_STATS=[{key:"hdi",label:"HDI score"},{key:"airports",label:"Airports"},{key:"districts",label:"Districts"},{key:"internet",label:"Internet (%)"}];
+const RANGES={population:[0.065,231.5],area:[32,342239],gdp:[0.3,435],literacy:[61.8,94.0],heritage:[0,6],border:[0,4005],forest:[3.6,90.0],hdi:[0.574,0.779],airports:[0,18],districts:[1,75],internet:[20,68]};
+const getActiveStats=()=>proMode?[...CORE_STATS,...PRO_STATS]:CORE_STATS;
+const getActiveDeck=()=>includeUTs?ALL_CARDS:ALL_CARDS.filter(c=>!c.isUT);
+function fmt(k,v){if(v===undefined||v===null)return"—";if(k==="population")return v.toFixed(2)+"M";if(k==="area")return v.toLocaleString();if(k==="gdp")return"$"+v+"B";if(k==="literacy"||k==="forest"||k==="internet")return v.toFixed(1)+"%";if(k==="hdi")return v.toFixed(3);if(k==="border")return v===0?"None":v.toLocaleString()+" km";return v;}
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
 function makeCode(){const c="ABCDEFGHJKLMNPQRSTUVWXYZ";return Array.from({length:4},()=>c[Math.floor(Math.random()*c.length)]).join("");}
-function el(id){return document.getElementById(id);}
-function render(html){el("app").innerHTML=html;}
+const el=id=>document.getElementById(id);
+const render=html=>{el("app").innerHTML=html;};
 
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // SETTINGS
-// ════════════════════════════════════════════════════════
-let includeUTs        = false;
-let proMode           = false;
-let onlineFlipsAllowed = 2;  // 0-5, chosen before creating a room
+// ══════════════════════════════════════════════════
+let includeUTs=false,proMode=false,onlineFlipsAllowed=2;
 
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // GAME STATE
-// ════════════════════════════════════════════════════════
-let mode="cpu", difficulty="easy";
-let p1Deck=[], p2Deck=[];
-let phase="", turn="", selectedStat=null, p1Card=null, p2Card=null;
-let handoffTo="";
-let roundHistory=[], streak=0;
-let sessionWins=0, sessionLosses=0, sessionDraws=0;
-let p1FlipsLeft=2, p2FlipsLeft=2;
-let p1FlippedThisRound=false, p2FlippedThisRound=false;
+// ══════════════════════════════════════════════════
+let mode="cpu",difficulty="easy";
+let p1Deck=[],p2Deck=[],phase="",turn="",selectedStat=null,p1Card=null,p2Card=null,handoffTo="";
+let roundHistory=[],streak=0,sessionWins=0,sessionLosses=0,sessionDraws=0;
+let p1FlipsLeft=2,p2FlipsLeft=2,p1FlippedThisRound=false,p2FlippedThisRound=false;
 let cpuSeenCards=new Set();
-
 // Online
-let myRole=null, roomCode=null, pollTimer=null, lastVer=-1, lastSK=null;
-let cachedState=null; // last rendered state — used to avoid Firebase propagation delay on picks
+let myRole=null,roomCode=null,pollTimer=null,lastVer=-1,lastSK=null,cachedState=null;
 
-// Reactions
-const REACTIONS = ["🤡","🍌"];
-let reactCooldown=false;   // prevents spamming
-let reactPickerOpen=false; // whether picker is visible
+// ══════════════════════════════════════════════════
+// REACTIONS — separate Firebase paths, clean channel
+//
+// P1 writes: react/{room}/p1   P2 reads: react/{room}/p1
+// P2 writes: react/{room}/p2   P1 reads: react/{room}/p2
+//
+// Each device polls ONLY the opponent's path.
+// It is architecturally impossible to see your own emoji.
+// ══════════════════════════════════════════════════
+const REACTIONS=["🤡","🍌"];
+let rxPollTimer=null;      // polls opponent's reaction path every second
+let rxLastSeen=null;       // key of last reaction shown — prevents repeats
+let rxCooldown=false;      // 3s cooldown between sends
+let rxPickerOpen=false;    // picker visibility
 
+function rxShowOverlay(emoji){
+  const d=document.createElement("div");
+  d.className="rx-overlay";d.textContent=emoji;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),2600);
+}
 
-// ════════════════════════════════════════════════════════
+// Start polling opponent's path — called once when game goes live
+function rxStartPoll(){
+  rxStopPoll();
+  if(!roomCode||!myRole)return;
+  const oppRole=myRole==="p1"?"p2":"p1";
+  const path=`react/${roomCode}/${oppRole}`;
+  rxPollTimer=setInterval(async()=>{
+    try{
+      const r=await fbGet(path);
+      if(!r||!r.ts)return;
+      const key=r.emoji+"_"+r.ts;
+      if(key===rxLastSeen)return;
+      rxLastSeen=key;
+      rxShowOverlay(r.emoji);
+    }catch(e){}
+  },1000);
+}
+
+function rxStopPoll(){
+  if(rxPollTimer){clearInterval(rxPollTimer);rxPollTimer=null;}
+  rxLastSeen=null;
+}
+
+// Send — writes to MY path only. I never read my own path.
+async function rxSend(emoji){
+  if(rxCooldown)return;
+  sfxClick();
+  rxCooldown=true;rxPickerOpen=false;rxRender();
+  try{
+    await fbSet(`react/${roomCode}/${myRole}`,{emoji,ts:Date.now()});
+  }catch(e){console.error("rxSend:",e);}
+  setTimeout(()=>{rxCooldown=false;rxRender();},3000);
+}
+
+function rxToggle(){rxPickerOpen=!rxPickerOpen;rxRender();}
+
+function rxRender(){
+  const w=el("rx-wrap");if(!w)return;
+  if(rxCooldown){w.innerHTML=`<div class="react-bar"><span class="react-cd">😤 sent!</span></div>`;return;}
+  if(!rxPickerOpen){w.innerHTML=`<div class="react-bar"><button class="react-btn" onclick="rxToggle()">😄 React</button></div>`;return;}
+  w.innerHTML=`<div class="react-bar"><button class="react-btn" onclick="rxToggle()">✕ Close</button></div>
+    <div class="react-picker">${REACTIONS.map(e=>`<button class="react-opt" onclick="rxSend('${e}')">${e}</button>`).join("")}</div>`;
+}
+
+// ══════════════════════════════════════════════════
 // FLIP LOGIC
-// ════════════════════════════════════════════════════════
-function isFlipActive(p1f,p2f){ return p1f!==p2f; } // XOR: only one flipped = active
-
-function getOutcome(pv,cv,pickerTurn,p1f,p2f){
-  const flipped=isFlipActive(p1f||false,p2f||false);
-  if(pickerTurn==="p1"){
-    if(flipped) return pv<cv?"win":pv>cv?"lose":"draw";
-    return pv>cv?"win":pv<cv?"lose":"draw";
-  } else {
-    if(flipped) return cv<pv?"lose":cv>pv?"win":"draw";
-    return cv>pv?"lose":cv<pv?"win":"draw";
-  }
+// ══════════════════════════════════════════════════
+const isFlipActive=(p1f,p2f)=>p1f!==p2f;
+function getOutcome(pv,cv,t,p1f,p2f){
+  const fl=isFlipActive(p1f||false,p2f||false);
+  if(t==="p1")return fl?(pv<cv?"win":pv>cv?"lose":"draw"):(pv>cv?"win":pv<cv?"lose":"draw");
+  return fl?(cv<pv?"lose":cv>pv?"win":"draw"):(cv>pv?"lose":cv<pv?"win":"draw");
 }
+const flipBannerText=(p1f,p2f)=>(!p1f&&!p2f)?"":p1f&&p2f?"🔄🔄 Both flipped — cancelled out! Highest wins.":"🔄 Flip active — lowest stat wins!";
 
-function flipBannerText(p1f,p2f){
-  if(!p1f&&!p2f) return "";
-  if(p1f&&p2f)   return "🔄🔄 Both flipped — cancelled out! Highest wins.";
-  return "🔄 Flip active — lowest stat wins this round!";
-}
-
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // CONFETTI
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function confetti(){
   const cols=["#5A9E22","#185FA5","#EF9F27","#E24B4A","#0F6E56","#D4537E"];
-  for(let i=0;i<70;i++){
-    const p=document.createElement("div");
-    p.className="confetti-piece";
-    p.style.cssText=`left:${Math.random()*100}vw;background:${cols[Math.floor(Math.random()*cols.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.5}s;border-radius:${Math.random()>0.5?"50%":"2px"}`;
-    document.body.appendChild(p);
-    setTimeout(()=>p.remove(),3500);
-  }
+  for(let i=0;i<70;i++){const p=document.createElement("div");p.className="confetti-piece";p.style.cssText=`left:${Math.random()*100}vw;background:${cols[Math.floor(Math.random()*cols.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.5}s;border-radius:${Math.random()>0.5?"50%":"2px"}`;document.body.appendChild(p);setTimeout(()=>p.remove(),3500);}
 }
 
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // CARD BUILDERS
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+const isProKey=k=>["hdi","airports","districts","internet"].includes(k);
 function buildCard(card,opts){
-  const {hdrCls,activeStat,outcome,clickable,animate}=opts;
-  const STATS=getActiveStats();
-  const isProKey=k=>["hdi","airports","districts","internet"].includes(k);
-  const rows=STATS.map(s=>{
-    let cls="stat-row";
-    if(isProKey(s.key)) cls+=" pro-stat";
-    if(activeStat&&s.key===activeStat){
-      cls+=outcome==="win"?" winner":outcome==="lose"?" loser":" selected";
-    }
+  const{hdrCls,activeStat,outcome,clickable,animate}=opts;
+  const rows=getActiveStats().map(s=>{
+    let cls="stat-row";if(isProKey(s.key))cls+=" pro-stat";
+    if(activeStat&&s.key===activeStat)cls+=outcome==="win"?" winner":outcome==="lose"?" loser":" selected";
     const badge=isProKey(s.key)?`<span class="pro-badge">PRO</span>`:"";
     return`<div class="${cls}"${clickable?` onclick="pickStat('${s.key}')"`:""}><span class="stat-name">${s.label}${badge}</span><span class="stat-value">${fmt(s.key,card[s.key])}</span></div>`;
   }).join("");
   const utBadge=card.isUT?`<span style="font-size:9px;background:rgba(212,83,126,0.3);color:#ED93B1;border-radius:4px;padding:1px 5px;margin-left:6px">UT</span>`:"";
   return`<div class="card${animate?" card-flip":""}"><div class="card-header ${hdrCls}"><p class="card-title">${card.emoji} ${card.name}${utBadge}</p><p class="card-fact">${card.fact}</p></div>${rows}</div>`;
 }
+function faceDown(hdrCls,label){return`<div class="card"><div class="card-header ${hdrCls}"><p class="card-title">🂠 ${label}</p></div><div class="facedown-body">${getActiveStats().map(()=>`<div class="facedown-row"></div>`).join("")}</div></div>`;}
 
-function faceDown(hdrCls,label){
-  const STATS=getActiveStats();
-  return`<div class="card"><div class="card-header ${hdrCls}"><p class="card-title">🂠 ${label}</p></div><div class="facedown-body">${STATS.map(()=>`<div class="facedown-row"></div>`).join("")}</div></div>`;
-}
-
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // MAIN MENU
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function showMenu(){
-  stopPoll(); myRole=null; roomCode=null; lastVer=-1; lastSK=null;
+  stopPoll();myRole=null;roomCode=null;lastVer=-1;lastSK=null;cachedState=null;
   render(`<div style="padding:2rem 0;text-align:center">
     <div style="font-size:48px;margin-bottom:0.5rem">🇮🇳</div>
     <h1 style="font-size:24px;font-weight:500;margin-bottom:0.25rem">Indian States</h1>
     <p style="font-size:18px;color:var(--text2);margin-bottom:2rem">Top Trumps</p>
     <div style="display:flex;flex-direction:column;gap:10px;max-width:300px;margin:0 auto">
       <button class="primary" onclick="startCPU()">🤖 Play vs CPU</button>
-      <button onclick="startHotseat()" style="width:100%">👥 Hotseat (same device)</button>
+      <button onclick="startHotseat()" style="width:100%">👥 Hotseat</button>
       <button onclick="showOnlineLobby()" style="width:100%">🌐 Online Multiplayer</button>
     </div>
     <div style="margin-top:2rem;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
@@ -388,44 +328,30 @@ function showMenu(){
   </div>`);
 }
 
-
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 // CPU MODE
-// ════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 function startCPU(){
-  sfxClick(); mode="cpu";
-  const s=shuffle(getActiveDeck()), half=Math.floor(s.length/2);
-  p1Deck=s.slice(0,half); p2Deck=s.slice(half);
-  phase="pick"; turn="p1"; selectedStat=null;
-  roundHistory=[]; streak=0; cpuSeenCards=new Set();
-  p1FlipsLeft=2; p2FlipsLeft=2; p1FlippedThisRound=false; p2FlippedThisRound=false;
+  sfxClick();mode="cpu";
+  const s=shuffle(getActiveDeck()),half=Math.floor(s.length/2);
+  p1Deck=s.slice(0,half);p2Deck=s.slice(half);
+  phase="pick";turn="p1";selectedStat=null;roundHistory=[];streak=0;cpuSeenCards=new Set();
+  p1FlipsLeft=2;p2FlipsLeft=2;p1FlippedThisRound=false;p2FlippedThisRound=false;
   renderCPU(true);
 }
-
 function cpuPickStat(card){
-  if(difficulty==="easy") return getActiveStats()[Math.floor(Math.random()*getActiveStats().length)].key;
-  if(difficulty==="medium"){
-    let best=null,bs=-1;
-    getActiveStats().forEach(s=>{const[mn,mx]=RANGES[s.key];const sc=(card[s.key]-mn)/(mx-mn);if(sc>bs){bs=sc;best=s.key;}});
-    return best;
-  }
-  const cpuNames=new Set(p2Deck.map(c=>c.name));
-  const possible=getActiveDeck().filter(s=>!cpuNames.has(s.name)&&!cpuSeenCards.has(s.name));
+  if(difficulty==="easy")return getActiveStats()[Math.floor(Math.random()*getActiveStats().length)].key;
+  if(difficulty==="medium"){let best=null,bs=-1;getActiveStats().forEach(s=>{const[mn,mx]=RANGES[s.key];const sc=(card[s.key]-mn)/(mx-mn);if(sc>bs){bs=sc;best=s.key;}});return best;}
+  const cpuNames=new Set(p2Deck.map(c=>c.name));const possible=getActiveDeck().filter(s=>!cpuNames.has(s.name)&&!cpuSeenCards.has(s.name));
   if(!possible.length){let best=null,bs=-1;getActiveStats().forEach(s=>{const[mn,mx]=RANGES[s.key];const sc=(card[s.key]-mn)/(mx-mn);if(sc>bs){bs=sc;best=s.key;}});return best;}
   let bestStat=null,bestW=-1,bestM=-Infinity;
   getActiveStats().forEach(s=>{let w=0,tot=0;possible.forEach(pc=>{const m=card[s.key]-pc[s.key];if(m>0)w++;tot+=m;});const avg=tot/possible.length;if(w>bestW||(w===bestW&&avg>bestM)){bestW=w;bestM=avg;bestStat=s.key;}});
   return bestStat;
 }
-
 function renderCPU(animate){
-  p1Card=p1Deck[0]; p2Card=p2Deck[0];
-  if(!p1Deck.length||!p2Deck.length){
-    const won=p1Deck.length>p2Deck.length;
-    won?sfxFanfare():sfxBoom();
-    if(won){sessionWins++;confetti();}else sessionLosses++;
-    render(`<div class="gameover"><div class="gameover-emoji">${won?"🎉":"😔"}</div><div class="gameover-title">${won?"You won!":"CPU wins!"}</div><div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Session: ${sessionWins}W ${sessionLosses}L ${sessionDraws}D</div><button class="primary" onclick="startCPU()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`);return;
-  }
-  const isCPUTurn=turn==="cpu", inR=phase==="result";
+  p1Card=p1Deck[0];p2Card=p2Deck[0];
+  if(!p1Deck.length||!p2Deck.length){const won=p1Deck.length>p2Deck.length;won?sfxFanfare():sfxBoom();if(won){sessionWins++;confetti();}else sessionLosses++;render(`<div class="gameover"><div class="gameover-emoji">${won?"🎉":"😔"}</div><div class="gameover-title">${won?"You won!":"CPU wins!"}</div><div style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Session: ${sessionWins}W ${sessionLosses}L ${sessionDraws}D</div><button class="primary" onclick="startCPU()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`);return;}
+  const isCPUTurn=turn==="cpu",inR=phase==="result";
   const outcome=inR?getOutcome(p1Card[selectedStat],p2Card[selectedStat],turn,p1FlippedThisRound,p2FlippedThisRound):null;
   let mt="",mc="msg",bt="",bc="turn-badge";
   if(!inR){if(!isCPUTurn){mt="Pick a stat!";bt="Your turn";bc="turn-badge turn-you";}else{mt=`CPU picks: ${getActiveStats().find(s=>s.key===selectedStat)?.label||"…"}`;mc="msg wait";bt="CPU's turn";bc="turn-badge turn-them";}}
@@ -442,13 +368,10 @@ function renderCPU(animate){
       <span class="pill ${difficulty==="hard"?"active-hard":""}" onclick="setDiff('hard')">Hard</span>
       <span class="pill ${includeUTs?"active-ut":""}" onclick="includeUTs=!includeUTs;startCPU()">🏛️ UTs</span>
       <span class="pill ${proMode?"active-pro":""}" onclick="proMode=!proMode;renderCPU(false)">⚡ Pro</span>
-      <span style="flex:1"></span>
-      <button class="small" onclick="showMenu()">Menu</button>
+      <span style="flex:1"></span><button class="small" onclick="showMenu()">Menu</button>
     </div>
     <div class="score-bar"><div><div class="score-label">Your cards</div><div class="score-num">${p1Deck.length}</div></div><div style="font-size:11px;color:var(--text3)">${p1Deck.length+p2Deck.length} in play</div><div style="text-align:right"><div class="score-label">CPU cards</div><div class="score-num">${p2Deck.length}</div></div></div>
-    ${streakBar}
-    <div class="turn-wrap"><span class="${bc}">${bt}</span></div>
-    <div class="${mc}">${mt}</div>
+    ${streakBar}<div class="turn-wrap"><span class="${bc}">${bt}</span></div><div class="${mc}">${mt}</div>
     <div class="arena">
       ${buildCard(p1Card,{hdrCls:"you",activeStat:selectedStat,outcome,clickable:!inR&&!isCPUTurn,animate})}
       ${inR?buildCard(p2Card,{hdrCls:"cpu",activeStat:selectedStat,outcome:outcome==="win"?"lose":outcome==="lose"?"win":outcome,clickable:false,animate:false}):faceDown("cpu",difficulty==="easy"?"🎲 Random":difficulty==="medium"?"🧠 Smart":"🧮 Counting")}
@@ -456,97 +379,26 @@ function renderCPU(animate){
     <div class="controls">${inR?`<button onclick="cpuNext()">Next card ↗</button>`:""}${!inR&&isCPUTurn?`<button onclick="revealCPU()">Reveal CPU card ↗</button>`:""}${!inR?flipBtn:""}</div>
     ${banner}${memBar}${historyHTML()}`;
 }
-
 function setDiff(d){sfxClick();difficulty=d;startCPU();}
+function cpuToggleFlip(){sfxClick();if(p1FlipsLeft<=0&&!p1FlippedThisRound)return;p1FlippedThisRound=!p1FlippedThisRound;if(p1FlippedThisRound)p1FlipsLeft--;else p1FlipsLeft++;renderCPU(false);}
+function pickStat(key){if(mode==="hotseat")hsPickStat(key);else if(mode==="cpu")cpuPickStatAction(key);else onlinePickStat(key);}
+function cpuPickStatAction(key){sfxClick();selectedStat=key;phase="result";const outcome=getOutcome(p1Card[key],p2Card[key],"p1",p1FlippedThisRound,p2FlippedThisRound);addHistory(key,p1Card[key],p2Card[key],outcome);if(outcome==="win"){sfxWin();streak++;}else if(outcome==="lose"){sfxLose();streak=0;}else sfxDraw();renderCPU(false);}
+function revealCPU(){sfxClick();phase="result";const outcome=getOutcome(p1Card[selectedStat],p2Card[selectedStat],"cpu",p1FlippedThisRound,p2FlippedThisRound);addHistory(selectedStat,p1Card[selectedStat],p2Card[selectedStat],outcome);if(outcome==="win"){sfxWin();streak++;}else if(outcome==="lose"){sfxLose();streak=0;}else sfxDraw();renderCPU(false);}
+function cpuNext(){sfxClick();const outcome=getOutcome(p1Card[selectedStat],p2Card[selectedStat],turn,p1FlippedThisRound,p2FlippedThisRound);cpuSeenCards.add(p1Card.name);if(outcome==="win"){p1Deck.push(p1Deck.shift());p1Deck.push(p2Deck.shift());turn="p1";}else if(outcome==="lose"){p2Deck.push(p2Deck.shift());p2Deck.push(p1Deck.shift());turn="cpu";}else{p1Deck.push(p1Deck.shift());p2Deck.push(p2Deck.shift());}if(turn==="cpu")selectedStat=cpuPickStat(p2Deck[0]);else selectedStat=null;phase="pick";p1FlippedThisRound=false;p2FlippedThisRound=false;renderCPU(true);}
+function addHistory(stat,pv,cv,outcome){const s=getActiveStats().find(x=>x.key===stat);roundHistory.unshift({label:s?.label||stat,pv:fmt(stat,pv),cv:fmt(stat,cv),outcome});if(roundHistory.length>5)roundHistory.pop();}
+function historyHTML(){if(!roundHistory.length)return"";return`<div class="history-wrap"><div class="history-title">Last rounds</div>${roundHistory.map(r=>`<div class="history-row"><span>${r.label}</span><span>You ${r.pv} · CPU ${r.cv}</span><span class="h-${r.outcome}">${r.outcome==="win"?"✓ Win":r.outcome==="lose"?"✗ Lose":"= Draw"}</span></div>`).join("")}</div>`;}
 
-function cpuToggleFlip(){
-  sfxClick();
-  if(p1FlipsLeft<=0&&!p1FlippedThisRound)return;
-  p1FlippedThisRound=!p1FlippedThisRound;
-  if(p1FlippedThisRound)p1FlipsLeft--;else p1FlipsLeft++;
-  renderCPU(false);
-}
-
-function pickStat(key){
-  if(mode==="hotseat") hsPickStat(key);
-  else if(mode==="cpu") cpuPickStatAction(key);
-  else onlinePickStat(key);
-}
-
-function cpuPickStatAction(key){
-  sfxClick(); selectedStat=key; phase="result";
-  const outcome=getOutcome(p1Card[key],p2Card[key],"p1",p1FlippedThisRound,p2FlippedThisRound);
-  addHistory(key,p1Card[key],p2Card[key],outcome);
-  if(outcome==="win"){sfxWin();streak++;}else if(outcome==="lose"){sfxLose();streak=0;}else sfxDraw();
-  renderCPU(false);
-}
-
-function revealCPU(){
-  sfxClick(); phase="result";
-  const outcome=getOutcome(p1Card[selectedStat],p2Card[selectedStat],"cpu",p1FlippedThisRound,p2FlippedThisRound);
-  addHistory(selectedStat,p1Card[selectedStat],p2Card[selectedStat],outcome);
-  if(outcome==="win"){sfxWin();streak++;}else if(outcome==="lose"){sfxLose();streak=0;}else sfxDraw();
-  renderCPU(false);
-}
-
-function cpuNext(){
-  sfxClick();
-  const outcome=getOutcome(p1Card[selectedStat],p2Card[selectedStat],turn,p1FlippedThisRound,p2FlippedThisRound);
-  cpuSeenCards.add(p1Card.name);
-  if(outcome==="win"){p1Deck.push(p1Deck.shift());p1Deck.push(p2Deck.shift());turn="p1";}
-  else if(outcome==="lose"){p2Deck.push(p2Deck.shift());p2Deck.push(p1Deck.shift());turn="cpu";}
-  else{p1Deck.push(p1Deck.shift());p2Deck.push(p2Deck.shift());}
-  if(turn==="cpu")selectedStat=cpuPickStat(p2Deck[0]);else selectedStat=null;
-  phase="pick"; p1FlippedThisRound=false; p2FlippedThisRound=false;
-  renderCPU(true);
-}
-
-function addHistory(stat,pv,cv,outcome){
-  const s=getActiveStats().find(x=>x.key===stat);
-  roundHistory.unshift({label:s?.label||stat,pv:fmt(stat,pv),cv:fmt(stat,cv),outcome});
-  if(roundHistory.length>5)roundHistory.pop();
-}
-
-function historyHTML(){
-  if(!roundHistory.length)return"";
-  return`<div class="history-wrap"><div class="history-title">Last rounds</div>${roundHistory.map(r=>`<div class="history-row"><span>${r.label}</span><span>You ${r.pv} · CPU ${r.cv}</span><span class="h-${r.outcome}">${r.outcome==="win"?"✓ Win":r.outcome==="lose"?"✗ Lose":"= Draw"}</span></div>`).join("")}</div>`;
-}
-
-
-// ════════════════════════════════════════════════════════
-// HOTSEAT MODE
-// ════════════════════════════════════════════════════════
-function startHotseat(){
-  sfxClick(); mode="hotseat";
-  const s=shuffle(getActiveDeck()), half=Math.floor(s.length/2);
-  p1Deck=s.slice(0,half); p2Deck=s.slice(half);
-  phase="pick"; turn="p1"; selectedStat=null;
-  roundHistory=[]; streak=0;
-  p1FlipsLeft=2; p2FlipsLeft=2; p1FlippedThisRound=false; p2FlippedThisRound=false;
-  renderHS(true);
-}
-
+// ══════════════════════════════════════════════════
+// HOTSEAT
+// ══════════════════════════════════════════════════
+function startHotseat(){sfxClick();mode="hotseat";const s=shuffle(getActiveDeck()),half=Math.floor(s.length/2);p1Deck=s.slice(0,half);p2Deck=s.slice(half);phase="pick";turn="p1";selectedStat=null;roundHistory=[];streak=0;p1FlipsLeft=2;p2FlipsLeft=2;p1FlippedThisRound=false;p2FlippedThisRound=false;renderHS(true);}
 function renderHS(animate){
-  p1Card=p1Deck[0]; p2Card=p2Deck[0];
-  if(!p1Deck.length||!p2Deck.length){
-    const won=p1Deck.length>p2Deck.length;
-    won?sfxFanfare():sfxBoom();if(won)confetti();
-    render(`<div class="gameover"><div class="gameover-emoji">${won?"🎉":"😔"}</div><div class="gameover-title">${won?"Player 1 wins!":"Player 2 wins!"}</div><button class="primary" onclick="startHotseat()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`);return;
-  }
-  if(phase==="handoff"){
-    const isP1=handoffTo==="P1";
-    render(`<div class="handoff"><div style="font-size:44px;margin-bottom:0.75rem">${isP1?"🔵":"🟢"}</div><p style="font-size:17px;font-weight:500;margin-bottom:0.4rem">Hand device to ${handoffTo}</p><p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem">Don't peek! Tap when ${handoffTo} is ready.</p><button class="primary" onclick="hsReveal()">I'm ${handoffTo} — show my card</button></div>`);return;
-  }
-  const activeCard=turn==="p1"?p1Card:p2Card;
-  const oppCard=turn==="p1"?p2Card:p1Card;
-  const activeHdr=turn==="p1"?"you":"p2";
-  const oppHdr=turn==="p1"?"p2":"you";
-  const pLabel=turn==="p1"?"Player 1":"Player 2";
-  const inR=phase==="result";
-  const myFlip=turn==="p1"?p1FlippedThisRound:p2FlippedThisRound;
-  const myFlipsLeft=turn==="p1"?p1FlipsLeft:p2FlipsLeft;
-  const pv=turn==="p1"?p1Card[selectedStat]:p2Card[selectedStat];
-  const cv=turn==="p1"?p2Card[selectedStat]:p1Card[selectedStat];
+  p1Card=p1Deck[0];p2Card=p2Deck[0];
+  if(!p1Deck.length||!p2Deck.length){const won=p1Deck.length>p2Deck.length;won?sfxFanfare():sfxBoom();if(won)confetti();render(`<div class="gameover"><div class="gameover-emoji">${won?"🎉":"😔"}</div><div class="gameover-title">${won?"Player 1 wins!":"Player 2 wins!"}</div><button class="primary" onclick="startHotseat()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`);return;}
+  if(phase==="handoff"){const isP1=handoffTo==="P1";render(`<div class="handoff"><div style="font-size:44px;margin-bottom:0.75rem">${isP1?"🔵":"🟢"}</div><p style="font-size:17px;font-weight:500;margin-bottom:0.4rem">Hand device to ${handoffTo}</p><p style="font-size:13px;color:var(--text2);margin-bottom:1.25rem">Don't peek!</p><button class="primary" onclick="hsReveal()">I'm ${handoffTo} — show my card</button></div>`);return;}
+  const activeCard=turn==="p1"?p1Card:p2Card,oppCard=turn==="p1"?p2Card:p1Card,activeHdr=turn==="p1"?"you":"p2",oppHdr=turn==="p1"?"p2":"you",pLabel=turn==="p1"?"Player 1":"Player 2",inR=phase==="result";
+  const myFlip=turn==="p1"?p1FlippedThisRound:p2FlippedThisRound,myFlipsLeft=turn==="p1"?p1FlipsLeft:p2FlipsLeft;
+  const pv=turn==="p1"?p1Card[selectedStat]:p2Card[selectedStat],cv=turn==="p1"?p2Card[selectedStat]:p1Card[selectedStat];
   const outcome=inR?(pv>cv?"win":pv<cv?"lose":"draw"):null;
   let mt="",mc="msg",bt="",bc="turn-badge";
   if(!inR){mt=`${pLabel}: pick a stat!`;bt=`${pLabel}'s turn`;bc="turn-badge "+(turn==="p1"?"turn-you":"turn-p2");}
@@ -556,170 +408,41 @@ function renderHS(animate){
   el("app").innerHTML=`
     <div class="toolbar"><span class="pill active-hotseat">👥 Hotseat</span><span style="flex:1"></span><button class="small" onclick="showMenu()">Menu</button></div>
     <div class="score-bar"><div><div class="score-label">P1 cards</div><div class="score-num">${p1Deck.length}</div></div><div style="font-size:11px;color:var(--text3)">${p1Deck.length+p2Deck.length} in play</div><div style="text-align:right"><div class="score-label">P2 cards</div><div class="score-num">${p2Deck.length}</div></div></div>
-    <div class="turn-wrap"><span class="${bc}">${bt}</span></div>
-    <div class="${mc}">${mt}</div>
-    <div class="arena">
-      ${inR?buildCard(activeCard,{hdrCls:activeHdr,activeStat:selectedStat,outcome,clickable:false,animate})+buildCard(oppCard,{hdrCls:oppHdr,activeStat:selectedStat,outcome:outcome==="win"?"lose":outcome==="lose"?"win":outcome,clickable:false,animate:false}):buildCard(activeCard,{hdrCls:activeHdr,activeStat:null,outcome:null,clickable:true,animate})+faceDown(oppHdr,"Hidden")}
-    </div>
-    <div class="controls">${inR?`<button onclick="hsNext('${outcome}')">Next card ↗</button>`:""}${!inR?flipBtn:""}</div>
-    ${banner}`;
+    <div class="turn-wrap"><span class="${bc}">${bt}</span></div><div class="${mc}">${mt}</div>
+    <div class="arena">${inR?buildCard(activeCard,{hdrCls:activeHdr,activeStat:selectedStat,outcome,clickable:false,animate})+buildCard(oppCard,{hdrCls:oppHdr,activeStat:selectedStat,outcome:outcome==="win"?"lose":outcome==="lose"?"win":outcome,clickable:false,animate:false}):buildCard(activeCard,{hdrCls:activeHdr,activeStat:null,outcome:null,clickable:true,animate})+faceDown(oppHdr,"Hidden")}</div>
+    <div class="controls">${inR?`<button onclick="hsNext('${outcome}')">Next card ↗</button>`:""}${!inR?flipBtn:""}</div>${banner}`;
 }
-
-function hsPickStat(key){
-  sfxClick();selectedStat=key;phase="result";
-  const pv=turn==="p1"?p1Card[key]:p2Card[key];
-  const cv=turn==="p1"?p2Card[key]:p1Card[key];
-  const outcome=pv>cv?"win":pv<cv?"lose":"draw";
-  if(outcome==="win"||outcome==="lose")sfxWin();else sfxDraw();
-  renderHS(false);
-}
-
-function hsToggleFlip(){
-  sfxClick();
-  if(turn==="p1"){if(p1FlipsLeft<=0&&!p1FlippedThisRound)return;p1FlippedThisRound=!p1FlippedThisRound;if(p1FlippedThisRound)p1FlipsLeft--;else p1FlipsLeft++;}
-  else{if(p2FlipsLeft<=0&&!p2FlippedThisRound)return;p2FlippedThisRound=!p2FlippedThisRound;if(p2FlippedThisRound)p2FlipsLeft--;else p2FlipsLeft++;}
-  renderHS(false);
-}
-
-function hsNext(outcome){
-  sfxClick();
-  const p1won=(turn==="p1"&&outcome==="win")||(turn==="p2"&&outcome==="lose");
-  const p2won=(turn==="p2"&&outcome==="win")||(turn==="p1"&&outcome==="lose");
-  if(p1won){p1Deck.push(p1Deck.shift());p1Deck.push(p2Deck.shift());turn="p1";}
-  else if(p2won){p2Deck.push(p2Deck.shift());p2Deck.push(p1Deck.shift());turn="p2";}
-  else{p1Deck.push(p1Deck.shift());p2Deck.push(p2Deck.shift());}
-  phase="pick";selectedStat=null;p1FlippedThisRound=false;p2FlippedThisRound=false;
-  if(outcome!=="draw"){handoffTo=turn==="p1"?"P1":"P2";phase="handoff";}
-  renderHS(false);
-}
-
+function hsPickStat(key){sfxClick();selectedStat=key;phase="result";const pv=turn==="p1"?p1Card[key]:p2Card[key],cv=turn==="p1"?p2Card[key]:p1Card[key],outcome=pv>cv?"win":pv<cv?"lose":"draw";if(outcome!=="draw")sfxWin();else sfxDraw();renderHS(false);}
+function hsToggleFlip(){sfxClick();if(turn==="p1"){if(p1FlipsLeft<=0&&!p1FlippedThisRound)return;p1FlippedThisRound=!p1FlippedThisRound;if(p1FlippedThisRound)p1FlipsLeft--;else p1FlipsLeft++;}else{if(p2FlipsLeft<=0&&!p2FlippedThisRound)return;p2FlippedThisRound=!p2FlippedThisRound;if(p2FlippedThisRound)p2FlipsLeft--;else p2FlipsLeft++;}renderHS(false);}
+function hsNext(outcome){sfxClick();const p1won=(turn==="p1"&&outcome==="win")||(turn==="p2"&&outcome==="lose"),p2won=(turn==="p2"&&outcome==="win")||(turn==="p1"&&outcome==="lose");if(p1won){p1Deck.push(p1Deck.shift());p1Deck.push(p2Deck.shift());turn="p1";}else if(p2won){p2Deck.push(p2Deck.shift());p2Deck.push(p1Deck.shift());turn="p2";}else{p1Deck.push(p1Deck.shift());p2Deck.push(p2Deck.shift());}phase="pick";selectedStat=null;p1FlippedThisRound=false;p2FlippedThisRound=false;if(outcome!=="draw"){handoffTo=turn==="p1"?"P1":"P2";phase="handoff";}renderHS(false);}
 function hsReveal(){sfxClick();phase="pick";renderHS(true);}
 
-
-// ════════════════════════════════════════════════════════
-// ONLINE MODE — Firebase REST
-// ════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════
-// REACTION SYSTEM
-//
-// Each player writes to their OWN Firebase path.
-// Each player ONLY reads the OPPONENT's path.
-// Sender can never see their own emoji — by design.
-//
-//   reactions/{roomCode}/p1  ← P1 writes, P2 reads
-//   reactions/{roomCode}/p2  ← P2 writes, P1 reads
-// ════════════════════════════════════════════════════════
-
-let reactPollTimer  = null;   // polls opponent's reaction path
-let lastSeenReact   = null;   // prevents showing same reaction twice
-
-// Show a flying emoji on THIS device's screen
-function showReactionOverlay(emoji){
-  const div = document.createElement("div");
-  div.className = "reaction-overlay";
-  div.textContent = emoji;
-  document.body.appendChild(div);
-  setTimeout(()=>div.remove(), 2600);
-}
-
-// Start polling opponent's reaction path — called when game begins
-function startReactionPoll(){
-  stopReactionPoll();
-  const opponentRole = myRole==="p1" ? "p2" : "p1";
-  const path = `reactions/${roomCode}/${opponentRole}`;
-  reactPollTimer = setInterval(async()=>{
-    try{
-      const r = await fbGet(path);
-      if(!r || !r.ts) return;
-      const key = r.emoji + "_" + r.ts;
-      if(key === lastSeenReact) return;  // already shown this one
-      lastSeenReact = key;
-      showReactionOverlay(r.emoji);
-    }catch(e){}
-  }, 1000);
-}
-
-// Stop and clean up reaction poll
-function stopReactionPoll(){
-  if(reactPollTimer){ clearInterval(reactPollTimer); reactPollTimer=null; }
-  lastSeenReact = null;
-}
-
-// Toggle emoji picker open/closed
-function toggleReactPicker(){
-  reactPickerOpen = !reactPickerOpen;
-  renderReactPicker();
-}
-
-// Re-render just the reaction section (no full game re-render)
-function renderReactPicker(){
-  const wrap = document.getElementById("react-wrap");
-  if(!wrap) return;
-  if(!reactPickerOpen){
-    wrap.innerHTML = reactBtnHTML();
-    return;
-  }
-  wrap.innerHTML = reactBtnHTML() + `
-    <div class="react-picker">
-      ${REACTIONS.map(e=>`<button class="react-pick-btn" onclick="sendReaction('${e}')">${e}</button>`).join("")}
-    </div>`;
-}
-
-function reactBtnHTML(){
-  if(reactCooldown) return `<span class="react-cooldown">😤 Reacting…</span>`;
-  return `<button class="react-btn" onclick="toggleReactPicker()">😄 React</button>`;
-}
-
-// Send a reaction — writes ONLY to MY path in Firebase
-// I never read my own path, so I can never see my own emoji
-async function sendReaction(emoji){
-  if(reactCooldown) return;
-  sfxClick();
-  reactCooldown = true;
-  reactPickerOpen = false;
-  renderReactPicker();
-  try{
-    await fbSet(`reactions/${roomCode}/${myRole}`, {emoji, ts:Date.now()});
-    // No showReactionOverlay here — sender never sees their own emoji
-  }catch(e){ console.error("sendReaction:", e); }
-  setTimeout(()=>{ reactCooldown=false; renderReactPicker(); }, 3000);
-}
-
-
-function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;stopReactionPoll();}
-
+// ══════════════════════════════════════════════════
+// ONLINE — Firebase REST
+// ══════════════════════════════════════════════════
+function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;rxStopPoll();}
 function startPoll(){
   stopPoll();
   pollTimer=setInterval(async()=>{
     try{
       const st=await fbGet(`rooms/${roomCode}`);
       if(!st)return;
-      // Normalise deck arrays (Firebase can return them as objects)
-      st.p1Deck=toArr(st.p1Deck);
-      st.p2Deck=toArr(st.p2Deck);
+      st.p1Deck=toArr(st.p1Deck);st.p2Deck=toArr(st.p2Deck);
       if(st.version!==lastVer){
         lastVer=st.version;
-        // Sync settings from room state
-        if(st.proMode!==undefined)    proMode=st.proMode;
-        if(st.includeUTs!==undefined) includeUTs=st.includeUTs;
-        if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
+        if(st.proMode!==undefined)proMode=st.proMode;
+        if(st.includeUTs!==undefined)includeUTs=st.includeUTs;
+        if(st.flipsAllowed!==undefined)onlineFlipsAllowed=st.flipsAllowed;
         renderOnline(st);
       }
     }catch(e){}
   },1500);
 }
 
-// Lobby — renders settings without re-pinging Firebase every time
 let _fbOk=false;
-
-async function showOnlineLobby(){
-  sfxClick(); mode="online";
-  try{await fbGet("ping");_fbOk=true;}catch(e){_fbOk=false;}
-  renderOnlineLobby();
-}
-
+async function showOnlineLobby(){sfxClick();mode="online";try{await fbGet("ping");_fbOk=true;}catch(e){_fbOk=false;}renderOnlineLobby();}
 function renderOnlineLobby(){
-  const flipDesc=onlineFlipsAllowed===0?"No flips — pure stat battle":onlineFlipsAllowed===1?"One flip — use it wisely!":onlineFlipsAllowed===2?"Two flips — classic mode":onlineFlipsAllowed+" flips — chaotic!";
+  const flipDesc=onlineFlipsAllowed===0?"No flips — pure stat battle":onlineFlipsAllowed===1?"One flip — use wisely!":onlineFlipsAllowed===2?"Two flips — classic mode":onlineFlipsAllowed+" flips — chaotic!";
   render(`<div class="lobby">
     <p style="font-size:11px;color:var(--text3);margin-bottom:1rem"><span class="dot ${_fbOk?"dot-ok":"dot-err"}"></span>${_fbOk?"Firebase connected ✓":"Firebase unreachable"}</p>
     <h2 style="font-size:20px;font-weight:500;margin-bottom:0.25rem">Online Multiplayer</h2>
@@ -732,7 +455,6 @@ function renderOnlineLobby(){
         <p style="font-size:11px;color:var(--text3);margin-top:6px">${flipDesc}</p>
       </div>
       <div style="margin-bottom:0.75rem">
-        <p style="font-size:12px;color:var(--text2);margin-bottom:0.5rem">Deck settings</p>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <span class="pill ${includeUTs?"active-ut":""}" onclick="includeUTs=!includeUTs;sfxClick();renderOnlineLobby()">🏛️ UTs ${includeUTs?"ON":"OFF"}</span>
           <span class="pill ${proMode?"active-pro":""}" onclick="proMode=!proMode;sfxClick();renderOnlineLobby()">⚡ Pro Stats ${proMode?"ON":"OFF"}</span>
@@ -742,9 +464,7 @@ function renderOnlineLobby(){
     </div>
     <div class="lobby-section">
       <h3>Join a room</h3>
-      <input class="code-input" id="jc" maxlength="4" placeholder="ABCD"
-        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"
-        onkeydown="if(event.key==='Enter')joinOnlineRoom()"/>
+      <input class="code-input" id="jc" maxlength="4" placeholder="ABCD" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')" onkeydown="if(event.key==='Enter')joinOnlineRoom()"/>
       <button class="primary" onclick="joinOnlineRoom()">Join room ↗</button>
       <div class="err" id="je"></div>
     </div>
@@ -753,43 +473,17 @@ function renderOnlineLobby(){
 }
 
 async function createOnlineRoom(){
-  sfxClick(); roomCode=makeCode(); myRole="p1";
-  const s=shuffle(getActiveDeck()), half=Math.floor(s.length/2);
-  const st={
-    p1Deck:s.slice(0,half).map(c=>c.name),
-    p2Deck:s.slice(half).map(c=>c.name),
-    turn:"p1", phase:"waiting",
-    selectedStat:null, pickedBy:null, result:null,
-    p1Flipped:false, p2Flipped:false,
-    isGameOver:false, version:0,
-    // Settings saved so P2 inherits them automatically
-    proMode:proMode, includeUTs:includeUTs,
-    flipsAllowed:onlineFlipsAllowed,
-    p1Flips:onlineFlipsAllowed, p2Flips:onlineFlipsAllowed,
-  };
+  sfxClick();roomCode=makeCode();myRole="p1";
+  const s=shuffle(getActiveDeck()),half=Math.floor(s.length/2);
+  const st={p1Deck:s.slice(0,half).map(c=>c.name),p2Deck:s.slice(half).map(c=>c.name),turn:"p1",phase:"waiting",selectedStat:null,pickedBy:null,result:null,p1Flipped:false,p2Flipped:false,isGameOver:false,version:0,proMode,includeUTs,flipsAllowed:onlineFlipsAllowed,p1Flips:onlineFlipsAllowed,p2Flips:onlineFlipsAllowed};
   try{
     await fbSet(`rooms/${roomCode}`,st);
-    render(`<div class="lobby">
-      <h2 style="font-size:20px;font-weight:500;margin-bottom:0.25rem">Room created!</h2>
-      <p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Share this code with your friend</p>
-      <div class="lobby-section">
-        <div class="code-display">${roomCode}</div>
-        <p class="waiting"><span class="pulse">⏳</span> Waiting for Player 2…</p>
-        <div style="margin-top:0.75rem;font-size:12px;color:var(--text3);text-align:center">
-          🔄 ${onlineFlipsAllowed} flip${onlineFlipsAllowed!==1?"s":""} · ${includeUTs?"🏛️ UTs ON":"🏛️ UTs OFF"} · ${proMode?"⚡ Pro ON":"⚡ Pro OFF"}
-        </div>
-      </div>
-      <button onclick="cancelOnlineRoom()" style="width:100%;margin-top:0.5rem">Cancel</button>
-    </div>`);
-    lastVer=0; lastReaction=null; reactCooldown=false; reactPickerOpen=false; startPoll();
-  }catch(e){alert("Could not create room: "+e.message);}
+    render(`<div class="lobby"><h2 style="font-size:20px;font-weight:500;margin-bottom:0.25rem">Room created!</h2><p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Share with your friend</p><div class="lobby-section"><div class="code-display">${roomCode}</div><p class="waiting"><span class="pulse">⏳</span> Waiting for Player 2…</p><div style="margin-top:0.75rem;font-size:12px;color:var(--text3);text-align:center">🔄 ${onlineFlipsAllowed} flip${onlineFlipsAllowed!==1?"s":""} · ${includeUTs?"🏛️ UTs ON":"🏛️ UTs OFF"} · ${proMode?"⚡ Pro ON":"⚡ Pro OFF"}</div></div><button onclick="cancelOnlineRoom()" style="width:100%;margin-top:0.5rem">Cancel</button></div>`);
+    lastVer=0;startPoll();
+  }catch(e){alert("Error: "+e.message);}
 }
 
-async function cancelOnlineRoom(){
-  sfxClick();stopPoll();
-  try{await fbDel(`rooms/${roomCode}`);}catch(e){}
-  showOnlineLobby();
-}
+async function cancelOnlineRoom(){sfxClick();stopPoll();try{await fbDel(`rooms/${roomCode}`);}catch(e){}showOnlineLobby();}
 
 async function joinOnlineRoom(){
   sfxClick();
@@ -799,181 +493,114 @@ async function joinOnlineRoom(){
     let st=await fbGet(`rooms/${code}`);
     if(!st){el("je").textContent="Room not found";return;}
     if(st.phase!=="waiting"){el("je").textContent="Game already started";return;}
-    st.p1Deck=toArr(st.p1Deck); st.p2Deck=toArr(st.p2Deck);
-    roomCode=code; myRole="p2";
-    // Inherit P1's settings
-    if(st.proMode!==undefined)      proMode=st.proMode;
-    if(st.includeUTs!==undefined)   includeUTs=st.includeUTs;
-    if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
-    st.phase="pick"; st.version=(st.version||0)+1;
+    st.p1Deck=toArr(st.p1Deck);st.p2Deck=toArr(st.p2Deck);
+    roomCode=code;myRole="p2";
+    if(st.proMode!==undefined)proMode=st.proMode;
+    if(st.includeUTs!==undefined)includeUTs=st.includeUTs;
+    if(st.flipsAllowed!==undefined)onlineFlipsAllowed=st.flipsAllowed;
+    st.phase="pick";st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
-    lastVer=st.version; lastSeenReact=null; reactCooldown=false; reactPickerOpen=false; startPoll(); startReactionPoll(); renderOnline(st);
+    lastVer=st.version;
+    rxCooldown=false;rxPickerOpen=false;rxLastSeen=null;
+    startPoll();rxStartPoll();
+    renderOnline(st);
   }catch(e){el("je").textContent="Error: "+e.message;}
 }
 
-// Toggle flip in online — stored in Firebase but hidden from opponent until reveal
 async function onlineToggleFlip(){
   sfxClick();
+  if(!cachedState||cachedState.phase!=="pick")return;
   try{
-    let st=await fbGet(`rooms/${roomCode}`);
-    if(!st||st.phase!=="pick")return;
-    st.p1Deck=toArr(st.p1Deck); st.p2Deck=toArr(st.p2Deck);
-    const fKey=myRole==="p1"?"p1Flipped":"p2Flipped";
-    const lKey=myRole==="p1"?"p1Flips":"p2Flips";
+    const st=JSON.parse(JSON.stringify(cachedState));
+    const fKey=myRole==="p1"?"p1Flipped":"p2Flipped",lKey=myRole==="p1"?"p1Flips":"p2Flips";
     const on=st[fKey]||false;
     if(!on&&(st[lKey]||0)<=0)return;
-    st[fKey]=!on;
-    st[lKey]=on?(st[lKey]||0)+1:(st[lKey]||0)-1;
+    st[fKey]=!on;st[lKey]=on?(st[lKey]||0)+1:(st[lKey]||0)-1;
     st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
-    lastVer=st.version; renderOnline(st);
+    lastVer=st.version;renderOnline(st);
   }catch(e){console.error(e);}
 }
 
 async function onlinePickStat(key){
   sfxClick();
-  // Use cachedState instead of fetching fresh from Firebase.
-  // Firebase REST has a propagation delay — immediately after writing,
-  // a fresh read can return the OLD state, causing the guard to fail silently.
-  // The cached state is always up to date since renderOnline sets it.
-  // Use cachedState — avoids Firebase propagation delay
   if(!cachedState||cachedState.phase!=="pick"||cachedState.turn!==myRole)return;
   try{
-    // Deep copy so we don't mutate the cache
     const st=JSON.parse(JSON.stringify(cachedState));
-    const myD=myRole==="p1"?st.p1Deck:st.p2Deck;
-    const opD=myRole==="p1"?st.p2Deck:st.p1Deck;
-    const mc=ALL_CARDS.find(s=>s.name===myD[0]);
-    const oc=ALL_CARDS.find(s=>s.name===opD[0]);
-    if(!mc||!oc){console.error("Card not found:",myD[0],opD[0]);return;}
-    const p1f=st.p1Flipped||false, p2f=st.p2Flipped||false;
-    const flipActive=isFlipActive(p1f,p2f);
-    const mv=mc[key], ov=oc[key];
+    const myD=myRole==="p1"?st.p1Deck:st.p2Deck,opD=myRole==="p1"?st.p2Deck:st.p1Deck;
+    const mc=ALL_CARDS.find(s=>s.name===myD[0]),oc=ALL_CARDS.find(s=>s.name===opD[0]);
+    if(!mc||!oc)return;
+    const p1f=st.p1Flipped||false,p2f=st.p2Flipped||false,flipActive=isFlipActive(p1f,p2f);
+    const mv=mc[key],ov=oc[key];
     let result;
-    if(myRole==="p1") result=flipActive?(mv<ov?"win":mv>ov?"lose":"draw"):(mv>ov?"win":mv<ov?"lose":"draw");
-    else              result=flipActive?(ov<mv?"win":ov>mv?"lose":"draw"):(ov>mv?"win":ov<mv?"lose":"draw");
+    if(myRole==="p1")result=flipActive?(mv<ov?"win":mv>ov?"lose":"draw"):(mv>ov?"win":mv<ov?"lose":"draw");
+    else result=flipActive?(ov<mv?"win":ov>mv?"lose":"draw"):(ov>mv?"win":ov<mv?"lose":"draw");
     const p1WinsRound=result==="win";
     const isGameOver=(p1WinsRound&&st.p2Deck.length===1)||(!p1WinsRound&&result!=="draw"&&st.p1Deck.length===1);
-    st.selectedStat=key; st.result=result; st.pickedBy=myRole;
-    st.phase="result"; st.isGameOver=isGameOver;
+    st.selectedStat=key;st.result=result;st.pickedBy=myRole;st.phase="result";st.isGameOver=isGameOver;
     st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
-    lastVer=st.version; renderOnline(st);
+    lastVer=st.version;renderOnline(st);
   }catch(e){console.error("onlinePickStat:",e);}
 }
 
 async function onlineNextCard(){
   sfxClick();
-  // Use cachedState for same reason as onlinePickStat — avoids Firebase propagation delay
   if(!cachedState||cachedState.phase!=="result")return;
-  const p1w=cachedState.result==="win", p2w=cachedState.result==="lose";
+  const p1w=cachedState.result==="win",p2w=cachedState.result==="lose";
   const winner=p1w?"p1":p2w?"p2":null;
-  if(winner&&winner!==myRole)return; // only winner advances
+  if(winner&&winner!==myRole)return;
   try{
     const st=JSON.parse(JSON.stringify(cachedState));
     if(p1w){st.p1Deck.push(st.p1Deck.shift());st.p1Deck.push(st.p2Deck.shift());st.turn="p1";}
     else if(p2w){st.p2Deck.push(st.p2Deck.shift());st.p2Deck.push(st.p1Deck.shift());st.turn="p2";}
     else{st.p1Deck.push(st.p1Deck.shift());st.p2Deck.push(st.p2Deck.shift());}
-    st.phase="pick"; st.selectedStat=null; st.result=null; st.pickedBy=null;
-    st.p1Flipped=false; st.p2Flipped=false; st.isGameOver=false;
+    st.phase="pick";st.selectedStat=null;st.result=null;st.pickedBy=null;
+    st.p1Flipped=false;st.p2Flipped=false;st.isGameOver=false;
     st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
-    lastVer=st.version; renderOnline(st);
+    lastVer=st.version;renderOnline(st);
   }catch(e){console.error("onlineNextCard:",e);}
 }
 
-
 async function leaveOnline(){
   sfxClick();
-  try{
-    let st=await fbGet(`rooms/${roomCode}`);
-    if(st){st.playerLeft=myRole;st.version=(st.version||0)+1;await fbSet(`rooms/${roomCode}`,st);}
-  }catch(e){}
-  stopPoll(); showMenu();
+  try{const st=await fbGet(`rooms/${roomCode}`);if(st){st.playerLeft=myRole;st.version=(st.version||0)+1;await fbSet(`rooms/${roomCode}`,st);}}catch(e){}
+  stopPoll();showMenu();
 }
 
 function renderOnline(state){
-  const app=el("app");
-  if(!app||!myRole)return;
+  const app=el("app");if(!app||!myRole)return;
   if(state.phase==="waiting"&&myRole==="p1")return;
-  // Start reaction poll the first time we see the game is live (both players in)
-  if(state.phase!=="waiting"&&!reactPollTimer) startReactionPoll();
-  // Normalise arrays
-  state.p1Deck=toArr(state.p1Deck);
-  state.p2Deck=toArr(state.p2Deck);
-  // Cache so onlinePickStat can use it without re-fetching
+  state.p1Deck=toArr(state.p1Deck);state.p2Deck=toArr(state.p2Deck);
   cachedState=state;
+  // Start reaction poll the first time game is live
+  if(!rxPollTimer)rxStartPoll();
 
   // Opponent left
-  if(state.playerLeft&&state.playerLeft!==myRole){
-    sfxLose();stopPoll();
-    app.innerHTML=`<div class="gameover"><div class="gameover-emoji">🚪</div><div class="gameover-title">Opponent left the game</div><p style="font-size:13px;color:var(--text2);margin-bottom:1.5rem">Your opponent disconnected.</p><button class="primary" onclick="showOnlineLobby()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`;return;
-  }
+  if(state.playerLeft&&state.playerLeft!==myRole){sfxLose();stopPoll();app.innerHTML=`<div class="gameover"><div class="gameover-emoji">🚪</div><div class="gameover-title">Opponent left</div><button class="primary" onclick="showOnlineLobby()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`;return;}
 
-  const myD=myRole==="p1"?state.p1Deck:state.p2Deck;
-  const opD=myRole==="p1"?state.p2Deck:state.p1Deck;
+  const myD=myRole==="p1"?state.p1Deck:state.p2Deck,opD=myRole==="p1"?state.p2Deck:state.p1Deck;
+  if(!myD?.length||!opD?.length){const iWon=myD?.length>0;iWon?sfxFanfare():sfxBoom();stopPoll();if(iWon)confetti();app.innerHTML=`<div class="gameover"><div class="gameover-emoji">${iWon?"🎉":"😔"}</div><div class="gameover-title">${iWon?"You won!":"Opponent wins!"}</div><button class="primary" onclick="showOnlineLobby()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`;return;}
 
-  // Game over
-  if(!myD?.length||!opD?.length){
-    const iWon=myD?.length>0;
-    iWon?sfxFanfare():sfxBoom();stopPoll();if(iWon)confetti();
-    app.innerHTML=`<div class="gameover"><div class="gameover-emoji">${iWon?"🎉":"😔"}</div><div class="gameover-title">${iWon?"You won!":"Opponent wins!"}</div><button class="primary" onclick="showOnlineLobby()">Play again</button><button onclick="showMenu()" style="margin-top:8px;width:100%">Main menu</button></div>`;return;
-  }
-
-  const mc=ALL_CARDS.find(s=>s.name===myD[0]);
-  const oc=ALL_CARDS.find(s=>s.name===opD[0]);
-  const isMy=state.turn===myRole, inR=state.phase==="result", sel=state.selectedStat;
-
-  // My outcome
+  const mc=ALL_CARDS.find(s=>s.name===myD[0]),oc=ALL_CARDS.find(s=>s.name===opD[0]);
+  const isMy=state.turn===myRole,inR=state.phase==="result",sel=state.selectedStat;
   let myOut=null;
-  if(inR&&state.result){
-    if(state.result==="draw")myOut="draw";
-    else if(myRole==="p1")myOut=state.result;
-    else myOut=state.result==="win"?"lose":"win";
-  }
-
-  // Sounds (once per result)
+  if(inR&&state.result){if(state.result==="draw")myOut="draw";else if(myRole==="p1")myOut=state.result;else myOut=state.result==="win"?"lose":"win";}
   const sk=`${state.version}_${state.phase}`;
-  if(inR&&sk!==lastSK){
-    lastSK=sk;
-    if(state.isGameOver){if(myOut==="win"){sfxFanfare();confetti();}else sfxBoom();}
-    else{if(myOut==="win"){sfxWin();confetti();}else if(myOut==="lose")sfxLose();else sfxDraw();}
-  }
-
-  // Status
+  if(inR&&sk!==lastSK){lastSK=sk;if(state.isGameOver){if(myOut==="win"){sfxFanfare();confetti();}else sfxBoom();}else{if(myOut==="win"){sfxWin();confetti();}else if(myOut==="lose")sfxLose();else sfxDraw();}}
   let mt="",mc2="msg",bt="",bc="turn-badge";
   if(!inR){if(isMy){mt="Pick a stat!";bt="Your turn";bc="turn-badge turn-you";}else{mt="Waiting for opponent…";mc2="msg wait";bt="Opponent's turn";bc="turn-badge turn-them";}}
-  else{if(myOut==="win"){mt="You win this round! 🎉";mc2="msg win";}else if(myOut==="lose"){mt="Opponent wins this round! 😔";mc2="msg lose";}else{mt="It's a draw!";mc2="msg draw";}bt=state.pickedBy===myRole?"Your pick":"Opponent's pick";bc="turn-badge "+(state.pickedBy===myRole?"turn-you":"turn-them");}
-
-  // Controls — only winner can advance (prevents double-advance race)
+  else{if(myOut==="win"){mt="You win this round! 🎉";mc2="msg win";}else if(myOut==="lose"){mt="Opponent wins! 😔";mc2="msg lose";}else{mt="Draw!";mc2="msg draw";}bt=state.pickedBy===myRole?"Your pick":"Opponent's pick";bc="turn-badge "+(state.pickedBy===myRole?"turn-you":"turn-them");}
   const iAmWinner=myOut==="win"||myOut==="draw";
   let ctrlHTML="";
-  if(inR){
-    if(state.isGameOver){
-      ctrlHTML=iAmWinner
-        ?`<div class="end-banner won"><div style="font-size:32px;margin-bottom:0.25rem">🎉</div><div style="font-size:16px;font-weight:500;color:#5A9E22">You won the game!</div><div style="font-size:12px;color:var(--text2);margin:0.5rem 0 0.75rem">You collected all the cards</div><button onclick="showOnlineLobby()" style="margin-right:6px">Play again</button><button onclick="showMenu()">Menu</button></div>`
-        :`<div class="end-banner lost"><div style="font-size:32px;margin-bottom:0.25rem">😔</div><div style="font-size:16px;font-weight:500;color:#E24B4A">Opponent wins!</div><div style="font-size:12px;color:var(--text2);margin:0.5rem 0 0.75rem">Better luck next time</div><button onclick="showOnlineLobby()" style="margin-right:6px">Play again</button><button onclick="showMenu()">Menu</button></div>`;
-    } else {
-      ctrlHTML=iAmWinner?`<button onclick="onlineNextCard()">Next card ↗</button>`:`<div class="msg wait" style="margin-top:0.5rem">⏳ Waiting for opponent to advance…</div>`;
-    }
-  }
-
-  // Flip button
-  const myFlipKey=myRole==="p1"?"p1Flipped":"p2Flipped";
-  const myFlipsLeft=myRole==="p1"?(state.p1Flips??onlineFlipsAllowed):(state.p2Flips??onlineFlipsAllowed);
-  const myFlipOn=state[myFlipKey]||false;
+  if(inR){if(state.isGameOver){ctrlHTML=iAmWinner?`<div class="end-banner won"><div style="font-size:32px;margin-bottom:0.25rem">🎉</div><div style="font-size:16px;font-weight:500;color:#5A9E22">You won the game!</div><div style="font-size:12px;color:var(--text2);margin:0.5rem 0 0.75rem">You collected all the cards</div><button onclick="showOnlineLobby()" style="margin-right:6px">Play again</button><button onclick="showMenu()">Menu</button></div>`:`<div class="end-banner lost"><div style="font-size:32px;margin-bottom:0.25rem">😔</div><div style="font-size:16px;font-weight:500;color:#E24B4A">Opponent wins!</div><div style="font-size:12px;color:var(--text2);margin:0.5rem 0 0.75rem">Better luck next time</div><button onclick="showOnlineLobby()" style="margin-right:6px">Play again</button><button onclick="showMenu()">Menu</button></div>`;}else{ctrlHTML=iAmWinner?`<button onclick="onlineNextCard()">Next card ↗</button>`:`<div class="msg wait" style="margin-top:0.5rem">⏳ Waiting for opponent…</div>`;}}
+  const myFlipKey=myRole==="p1"?"p1Flipped":"p2Flipped",myFlipsLeft=myRole==="p1"?(state.p1Flips??onlineFlipsAllowed):(state.p2Flips??onlineFlipsAllowed),myFlipOn=state[myFlipKey]||false;
   const flipBtn=!inR?`<button class="${myFlipOn?"flip-on":""}" onclick="onlineToggleFlip()">🔄 Flip ${myFlipOn?"ON ✓":"OFF"} (${myFlipsLeft} left)</button>`:"";
-
-  // Flip banner
-  const p1f=state.p1Flipped||false, p2f=state.p2Flipped||false;
+  const p1f=state.p1Flipped||false,p2f=state.p2Flipped||false;
   const banner=inR?`<div class="flip-banner">${flipBannerText(p1f,p2f)}</div>`:"";
-
-  // Opponent card
   const oppOut=myOut==="win"?"lose":myOut==="lose"?"win":myOut;
-
-  // Read-only settings strip
-  const settingsStrip=`<div class="settings-strip">🔄 ${state.flipsAllowed??2} flips${state.includeUTs?" · 🏛️ UTs":""}${state.proMode?" · ⚡ Pro":""}</div>`;
-
+  const strip=`<div class="settings-strip">🔄 ${state.flipsAllowed??2} flips${state.includeUTs?" · 🏛️ UTs":""}${state.proMode?" · ⚡ Pro":""}</div>`;
   app.innerHTML=`
     <div class="toolbar">
       <span class="pill active-online">🌐 Online</span>
@@ -981,7 +608,7 @@ function renderOnline(state){
       <span style="flex:1"></span>
       <button class="small" onclick="leaveOnline()">Leave</button>
     </div>
-    ${settingsStrip}
+    ${strip}
     <div class="score-bar"><div><div class="score-label">Your cards</div><div class="score-num">${myD.length}</div></div><div style="font-size:11px;color:var(--text3)">${state.p1Deck.length+state.p2Deck.length} in play</div><div style="text-align:right"><div class="score-label">Opponent</div><div class="score-num">${opD.length}</div></div></div>
     <div class="turn-wrap"><span class="${bc}">${bt}</span></div>
     <div class="${mc2}">${mt}</div>
@@ -991,11 +618,10 @@ function renderOnline(state){
     </div>
     <div class="controls">${ctrlHTML}${!inR?flipBtn:""}</div>
     ${banner}
-    <!-- Reaction button — always visible during online game -->
-    <div id="react-wrap" style="text-align:center;margin-top:8px">${reactBtnHTML()}</div>`;
+    <div id="rx-wrap"></div>`;
+  rxCooldown=rxCooldown;rxPickerOpen=rxPickerOpen;rxRender();
 }
 
-// Boot
 showMenu();
 </script>
 </body>

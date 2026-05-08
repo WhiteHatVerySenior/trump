@@ -273,6 +273,7 @@ let cpuSeenCards=new Set();
 
 // Online
 let myRole=null, roomCode=null, pollTimer=null, lastVer=-1, lastSK=null;
+let cachedState=null; // last rendered state — used to avoid Firebase propagation delay on picks
 
 
 // ════════════════════════════════════════════════════════
@@ -573,7 +574,7 @@ function hsReveal(){sfxClick();phase="pick";renderHS(true);}
 // ════════════════════════════════════════════════════════
 // ONLINE MODE — Firebase REST
 // ════════════════════════════════════════════════════════
-function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}cachedState=null;}
 
 function startPoll(){
   stopPoll();
@@ -719,17 +720,19 @@ async function onlineToggleFlip(){
 
 async function onlinePickStat(key){
   sfxClick();
+  // Use cachedState instead of fetching fresh from Firebase.
+  // Firebase REST has a propagation delay — immediately after writing,
+  // a fresh read can return the OLD state, causing the guard to fail silently.
+  // The cached state is always up to date since renderOnline sets it.
+  if(!cachedState||cachedState.phase!=="pick"||cachedState.turn!==myRole)return;
   try{
-    let st=await fbGet(`rooms/${roomCode}`);
-    if(!st)return;
-    st.p1Deck=toArr(st.p1Deck); st.p2Deck=toArr(st.p2Deck);
-    // Guard: only act if it's still pick phase and my turn
-    if(st.phase!=="pick"||st.turn!==myRole)return;
+    // Deep copy so we don't mutate the cache
+    const st=JSON.parse(JSON.stringify(cachedState));
     const myD=myRole==="p1"?st.p1Deck:st.p2Deck;
     const opD=myRole==="p1"?st.p2Deck:st.p1Deck;
     const mc=ALL_CARDS.find(s=>s.name===myD[0]);
     const oc=ALL_CARDS.find(s=>s.name===opD[0]);
-    if(!mc||!oc)return;
+    if(!mc||!oc){console.error("Card not found:",myD[0],opD[0]);return;}
     const p1f=st.p1Flipped||false, p2f=st.p2Flipped||false;
     const flipActive=isFlipActive(p1f,p2f);
     const mv=mc[key], ov=oc[key];
@@ -748,14 +751,13 @@ async function onlinePickStat(key){
 
 async function onlineNextCard(){
   sfxClick();
+  // Use cachedState for same reason as onlinePickStat — avoids Firebase propagation delay
+  if(!cachedState||cachedState.phase!=="result")return;
+  const p1w=cachedState.result==="win", p2w=cachedState.result==="lose";
+  const winner=p1w?"p1":p2w?"p2":null;
+  if(winner&&winner!==myRole)return; // only winner advances
   try{
-    let st=await fbGet(`rooms/${roomCode}`);
-    if(!st||st.phase!=="result")return;
-    st.p1Deck=toArr(st.p1Deck); st.p2Deck=toArr(st.p2Deck);
-    // Only winner (or either on draw) advances
-    const p1w=st.result==="win", p2w=st.result==="lose";
-    const winner=p1w?"p1":p2w?"p2":null;
-    if(winner&&winner!==myRole)return;
+    const st=JSON.parse(JSON.stringify(cachedState));
     if(p1w){st.p1Deck.push(st.p1Deck.shift());st.p1Deck.push(st.p2Deck.shift());st.turn="p1";}
     else if(p2w){st.p2Deck.push(st.p2Deck.shift());st.p2Deck.push(st.p1Deck.shift());st.turn="p2";}
     else{st.p1Deck.push(st.p1Deck.shift());st.p2Deck.push(st.p2Deck.shift());}
@@ -766,6 +768,7 @@ async function onlineNextCard(){
     lastVer=st.version; renderOnline(st);
   }catch(e){console.error("onlineNextCard:",e);}
 }
+
 
 async function leaveOnline(){
   sfxClick();
@@ -783,6 +786,8 @@ function renderOnline(state){
   // Normalise arrays
   state.p1Deck=toArr(state.p1Deck);
   state.p2Deck=toArr(state.p2Deck);
+  // Cache so onlinePickStat can use it without re-fetching
+  cachedState=state;
 
   // Opponent left
   if(state.playerLeft&&state.playerLeft!==myRole){

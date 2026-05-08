@@ -724,7 +724,10 @@ async function onlinePickStat(key){
   // Firebase REST has a propagation delay — immediately after writing,
   // a fresh read can return the OLD state, causing the guard to fail silently.
   // The cached state is always up to date since renderOnline sets it.
-  if(!cachedState||cachedState.phase!=="pick"||cachedState.turn!==myRole)return;
+  // DEBUG — show exactly why we're blocked
+  if(!cachedState){alert("DEBUG: no cached state");return;}
+  if(cachedState.phase!=="pick"){alert("DEBUG: phase="+cachedState.phase+" (not pick)");return;}
+  if(cachedState.turn!==myRole){alert("DEBUG: turn="+cachedState.turn+" but myRole="+myRole);return;}
   try{
     // Deep copy so we don't mutate the cache
     const st=JSON.parse(JSON.stringify(cachedState));

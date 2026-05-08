@@ -644,8 +644,8 @@ async function sendReaction(emoji){
   if(reactCooldown)return;
   sfxClick();
   reactCooldown=true; reactPickerOpen=false;
-  // Show on sender's screen immediately
-  showReactionOverlay(emoji);
+  // Do NOT show on sender's screen — only opponent sees it
+  // (sender already knows what they sent!)
   renderReactPicker();
   try{
     // Write reaction to Firebase — opponent's poll will pick it up
@@ -778,7 +778,7 @@ async function createOnlineRoom(){
       </div>
       <button onclick="cancelOnlineRoom()" style="width:100%;margin-top:0.5rem">Cancel</button>
     </div>`);
-    lastVer=0; startPoll();
+    lastVer=0; lastReaction=null; reactCooldown=false; reactPickerOpen=false; startPoll();
   }catch(e){alert("Could not create room: "+e.message);}
 }
 
@@ -804,7 +804,7 @@ async function joinOnlineRoom(){
     if(st.flipsAllowed!==undefined) onlineFlipsAllowed=st.flipsAllowed;
     st.phase="pick"; st.version=(st.version||0)+1;
     await fbSet(`rooms/${roomCode}`,st);
-    lastVer=st.version; startPoll(); renderOnline(st);
+    lastVer=st.version; lastReaction=null; reactCooldown=false; reactPickerOpen=false; startPoll(); renderOnline(st);
   }catch(e){el("je").textContent="Error: "+e.message;}
 }
 
